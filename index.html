@@ -343,7 +343,7 @@
         <div class="sketch-card bg-gradient-to-br from-snow-100 to-snow-50 border-snow-300 rounded-3xl p-4 flex items-center justify-between gap-3">
           <div>
             <h2 class="text-base font-bold text-ink-800">🌠 親友許願池</h2>
-            <p class="text-xs text-ink-600 mt-1 leading-relaxed">私密許願空間，僅您本人與旅行者看得到！</p>
+            <p class="text-xs text-ink-600 mt-1 leading-relaxed">許願空間，僅您本人與旅行者看得到！</p>
           </div>
           <button onclick="openAddWishModal()"
                   class="shrink-0 py-2.5 px-3.5 rounded-2xl bg-ice-500 hover:bg-ice-600 active:scale-95 text-white font-bold text-xs shadow-sm flex flex-col items-center justify-center gap-1 transition">
@@ -432,8 +432,8 @@
   <div id="familyWishlistBar" class="hidden fixed bottom-0 inset-x-0 z-30 bg-snow-50/95 backdrop-blur-md border-t-2 border-snow-200 px-3 py-2.5 shadow-[0_-4px_16px_rgba(53,98,128,0.1)]">
     <div class="max-w-xl mx-auto flex items-center justify-between gap-3">
       <div class="min-w-0">
-        <p class="text-xs font-bold text-ink-800 truncate"><span id="barFamilyName">家人</span> 的私密購物車</p>
-        <p id="barFamilyCountText" class="text-[11px] text-ink-500">目前已私密勾選 0 件</p>
+        <p class="text-xs font-bold text-ink-800 truncate"><span id="barFamilyName">家人</span> 的購物車</p>
+        <p id="barFamilyCountText" class="text-[11px] text-ink-500">目前已勾選 0 件</p>
       </div>
       <button onclick="submitFamilyPlusOneNotification()"
               class="shrink-0 py-2 px-4 rounded-2xl bg-ice-500 hover:bg-ice-600 active:scale-98 text-white font-bold text-xs shadow-md flex items-center gap-1.5 transition">
@@ -3261,14 +3261,14 @@
       let count = 0;
       tripState.shoppingItems.forEach(i => { count += ((i.requests && i.requests[myName]) || 0); });
       document.getElementById('barFamilyName').textContent = myName;
-      document.getElementById('barFamilyCountText').textContent = `目前已私密勾選 ${count} 件`;
+      document.getElementById('barFamilyCountText').textContent = `目前已勾選 ${count} 件`;
       bar.classList.remove('hidden');
     }
     window.submitFamilyPlusOneNotification = function() {
       const myName = userIdentity.nickname || '家人';
-      pushTargetedNotification('wishlist_private', 'traveler', `🙋‍♂️ ${myName} 更新了私密代購數量`, '已同步至購物清單統計中', 'shopping');
+      pushTargetedNotification('wishlist_private', 'traveler', `🙋‍♂️ ${myName} 更新了代購數量`, '已同步至購物清單統計中', 'shopping');
       syncStateEverywhere();
-      showToast('已私密通知小吉郎與吉郎！');
+      showToast('已通知小吉郎與吉郎！');
     };
     window.toggleShoppingBought = (id) => { if (!isTravelerMode()) return; const item = tripState.shoppingItems.find(i => i.id === id); if (item) { item.bought = !item.bought; syncStateEverywhere(); renderAll(); } };
     window.deleteShoppingItem = (id) => { if (!isTravelerMode()) return; tripState.shoppingItems = tripState.shoppingItems.filter(i => i.id !== id); syncStateEverywhere(); renderAll(); };
