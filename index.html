@@ -3596,7 +3596,6 @@
         bar.classList.add('hidden');
       }
     }
-
     window.openAddShoppingModal = function() {
       if (!isTravelerMode()) return;
       tempShopPhotoDataUrl = '';
@@ -3713,56 +3712,6 @@
     };
     window.toggleShoppingBought = (id) => { if (!isTravelerMode()) return; const item = tripState.shoppingItems.find(i => i.id === id); if (item) { item.bought = !item.bought; syncStateEverywhere(); renderAll(); } };
     window.deleteShoppingItem = (id) => { if (!isTravelerMode()) return; tripState.shoppingItems = tripState.shoppingItems.filter(i => i.id !== id); syncStateEverywhere(); renderAll(); };
-      window.openAddShoppingModal = () => {
-    if (!isTravelerMode()) return;
-    tempShopPhotoDataUrl = '';
-    document.getElementById('shopNameInput').value = '';
-    document.getElementById('shopSelfQtyInput').value = '1';
-    document.getElementById('shopNoteInput').value = '';
-    document.getElementById('shopPhotoInput').value = '';
-    document.getElementById('shopPhotoPreviewBox').classList.add('hidden');
-    document.getElementById('addShoppingModal').classList.remove('hidden');
-  };
-  window.closeAddShoppingModal = () => document.getElementById('addShoppingModal').classList.add('hidden');
-  window.handleShopPhotoSelect = function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    compressImageFile(file, 420, 0.65, (dataUrl) => {
-      tempShopPhotoDataUrl = dataUrl;
-      document.getElementById('shopPhotoPreviewImg').src = dataUrl;
-      document.getElementById('shopPhotoPreviewBox').classList.remove('hidden');
-    });
-  };
-  window.removeShopPhoto = () => {
-    tempShopPhotoDataUrl = '';
-    document.getElementById('shopPhotoInput').value = '';
-    document.getElementById('shopPhotoPreviewBox').classList.add('hidden');
-  };
-  window.saveNewShoppingItem = function(e) {
-    e.preventDefault();
-    if (!isTravelerMode()) return;
-    const store = document.getElementById('shopStoreInput').value;
-    const priority = document.getElementById('shopPriorityInput').value;
-    const name = document.getElementById('shopNameInput').value.trim();
-    const selfQty = parseInt(document.getElementById('shopSelfQtyInput').value || '0', 10);
-    const note = document.getElementById('shopNoteInput').value.trim();
-    if (!name) return;
-    tripState.shoppingItems.unshift({
-      id: 'shop-' + Date.now(),
-      store,
-      priority,
-      name,
-      note,
-      selfQty,
-      requests: {},
-      bought: false,
-      photoDataUrl: tempShopPhotoDataUrl || ''
-    });
-    tempShopPhotoDataUrl = '';
-    closeAddShoppingModal();
-    syncStateEverywhere();
-    renderAll();
-  };
     // Wishpool
     window.openAddWishModal = () => {
       if (isCloudReadOnlyMode) return;
