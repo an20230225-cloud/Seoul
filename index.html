@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -718,7 +716,7 @@
       </form>
     </div>
   </div>
-
+  
   <!-- 6. Add Family Wishpool Modal -->
   <div id="addWishModal" class="fixed inset-0 z-50 hidden bg-ink-800/55 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl border-2 border-snow-200 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col card-enter">
@@ -727,7 +725,7 @@
           <h3 class="font-bold text-ink-800 text-base">新增親友許願商品</h3>
           <p class="text-xs text-ink-600">送出後將自動加入購物清單找尋中</p>
         </div>
-        <button onclick="closeAddWishModal()" class="w-8 h-8 rounded-full bg-white text-ink-600 flex items-center justify-center">
+        <button type="button" onclick="closeAddWishModal()" class="w-8 h-8 rounded-full bg-white text-ink-600 flex items-center justify-center">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -776,15 +774,6 @@
           </div>
         </div>
         <div class="pt-2 flex items-center gap-2.5">
-          <button type="button" onclick="closeAddWishModal()" class="flex-1 py-3 rounded-2xl bg-snow-100 text-ink-700 font-bold text-sm">取消</button>
-          <button type="submit" class="flex-1 py-3 rounded-2xl bg-ice-600 hover:bg-ice-700 text-white font-bold text-sm shadow-md">加入購物清單</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- 7. Add Shopping Item Modal -->
-          <div class="pt-2 flex items-center gap-2.5">
           <button type="button" onclick="closeAddWishModal()" class="flex-1 py-3 rounded-2xl bg-snow-100 text-ink-700 font-bold text-sm">取消</button>
           <button type="submit" class="flex-1 py-3 rounded-2xl bg-ice-600 hover:bg-ice-700 text-white font-bold text-sm shadow-md">加入購物清單</button>
         </div>
@@ -854,7 +843,6 @@
       </form>
     </div>
   </div>
-
 
   <!-- 8. Notifications Center Modal -->
   <div id="notificationsModal" class="fixed inset-0 z-50 hidden bg-ink-800/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
