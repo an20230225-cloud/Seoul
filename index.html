@@ -3549,8 +3549,17 @@
               </div>
             ` : ''}
           </div>
-          ${item.photoDataUrl ? `<img src="${item.photoDataUrl}" onclick="openLightboxSrc('${item.photoDataUrl}', '${item.name}')" class="w-16 h-12 rounded-xl object-cover border border-snow-200 shrink-0 cursor-pointer" />` : ''}
-          ${isTravelerMode() ? `<button onclick="deleteShoppingItem('${item.id}')" class="text-ice-500 hover:text-ice-700 p-1 shrink-0"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
+                    ${item.photoDataUrl ? `<img src="${item.photoDataUrl}" onclick="openLightboxSrc('${item.photoDataUrl}', '${item.name}')" class="w-16 h-12 rounded-xl object-cover border border-snow-200 shrink-0 cursor-pointer" />` : ''}
+          ${isTravelerMode() ? `
+            <div class="flex items-center gap-0.5 shrink-0">
+              <button type="button" onclick="openEditShoppingModal('${item.id}')" title="修改商品" class="text-ink-500 hover:text-ice-700 p-1">
+                <i class="fa-solid fa-pen text-xs"></i>
+              </button>
+              <button type="button" onclick="deleteShoppingItem('${item.id}')" title="刪除商品" class="text-ice-500 hover:text-ice-700 p-1">
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          ` : ''}
         `;
         listEl.appendChild(row);
       });
@@ -3570,15 +3579,97 @@
       renderAll();
     };
     function updateBottomFamilyWishlistBar() {
-      const bar = document.getElementById('familyWishlistBar');
-      if (!isFamilyMode() || isCloudReadOnlyMode || activeMainTab !== 'shopping' || shoppingSubMode !== 'official') { bar.classList.add('hidden'); return; }
-      const myName = userIdentity.nickname || '家人';
-      let count = 0;
-      tripState.shoppingItems.forEach(i => { count += ((i.requests && i.requests[myName]) || 0); });
-      document.getElementById('barFamilyName').textContent = myName;
-      document.getElementById('barFamilyCountText').textContent = `目前已勾選 ${count} 件`;
-      bar.classList.remove('hidden');
-    }
+          window.openAddShoppingModal = function() {
+      if (!isTravelerMode()) return;
+      tempShopPhotoDataUrl = '';
+      document.getElementById('shopModalTitle').textContent = '+ 新增';
+      document.getElementById('shopEditIdInput').value = '';
+      document.getElementById('shopStoreInput').value = currentStoreFilter || 'daiso';
+      document.getElementById('shopPriorityInput').value = '必買';
+      document.getElementById('shopNameInput').value = '';
+      document.getElementById('shopSelfQtyInput').value = '1';
+      document.getElementById('shopNoteInput').value = '';
+      if (document.getElementById('shopPhotoInput')) document.getElementById('shopPhotoInput').value = '';
+      if (document.getElementById('shopPhotoPreviewBox')) document.getElementById('shopPhotoPreviewBox').classList.add('hidden');
+      document.getElementById('addShoppingModal').classList.remove('hidden');
+    };
+
+    window.openEditShoppingModal = function(itemId) {
+      if (!isTravelerMode()) return;
+      const item = (tripState.shoppingItems || []).find(i => i.id === itemId);
+      if (!item) return;
+      tempShopPhotoDataUrl = item.photoDataUrl || '';
+      document.getElementById('shopModalTitle').textContent = '修改商品';
+      document.getElementById('shopEditIdInput').value = item.id;
+      document.getElementById('shopStoreInput').value = item.store || 'daiso';
+      document.getElementById('shopPriorityInput').value = item.priority || '必買';
+      document.getElementById('shopNameInput').value = item.name || '';
+      document.getElementById('shopSelfQtyInput').value = item.selfQty ?? 1;
+      document.getElementById('shopNoteInput').value = item.note || '';
+      if (document.getElementById('shopPhotoInput')) document.getElementById('shopPhotoInput').value = '';
+      const previewBox = document.getElementById('shopPhotoPreviewBox');
+      const previewImg = document.getElementById('shopPhotoPreviewImg');
+      if (previewBox && previewImg) {
+        if (tempShopPhotoDataUrl) {
+          previewImg.src = tempShopPhotoDataUrl;
+          previewBox.classList.remove('hidden');
+        } else {
+          previewImg.src = '';
+          previewBox.classList.add('hidden');
+        }
+      }
+      document.getElementById('addShoppingModal').classList.remove('hidden');
+    };
+
+    window.closeAddShoppingModal = function() {
+      document.getElementById('addShoppingModal').classList.add('hidden');
+    };
+
+    window.saveNewShoppingItem = function(e) {
+      e.preventDefault();
+      if (!isTravelerMode()) return;
+      const editId = document.getElementById('shopEditIdInput').value;
+      const store = document.getElementById('shopStoreInput').value;
+      const priority = document.getElementById('shopPriorityInput').value;
+      const name = document.getElementById('shopNameInput').value.trim();
+      const selfQty = parseInt(document.getElementById('shopSelfQtyInput').value || '0', 10);
+      const note = document.getElementById('shopNoteInput').value.trim();
+      if (!name) return;
+
+      if (editId) {
+        const target = (tripState.shoppingItems || []).find(i => i.id === editId);
+        if (target) {
+          Object.assign(target, {
+            store,
+            priority,
+            name,
+            note,
+            selfQty,
+            photoDataUrl: tempShopPhotoDataUrl || ''
+          });
+        }
+        showToast('已更新商品！');
+      } else {
+        tripState.shoppingItems.unshift({
+          id: 'shop-' + Date.now(),
+          store,
+          priority,
+          name,
+          note,
+          selfQty,
+          requests: {},
+          bought: false,
+          photoDataUrl: tempShopPhotoDataUrl || ''
+        });
+        showToast('已加入購物清單！');
+      }
+
+      tempShopPhotoDataUrl = '';
+      closeAddShoppingModal();
+      syncStateEverywhere();
+      renderAll();
+    };
+
     window.submitFamilyPlusOneNotification = function() {
       if (isCloudReadOnlyMode) return;
       const myName = userIdentity.nickname || '家人';
