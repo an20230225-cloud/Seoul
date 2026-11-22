@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>首爾遊 動態看板📋</title>
+  <title>Seoul📋</title>
   <!-- PWA Standalone Full-Screen App Meta & Winter Namsan Tower Icon -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="首爾遊看板" />
+  <meta name="apple-mobile-web-app-title" content="Seoul" />
   <meta name="theme-color" content="#F4F9FC" />
-  <!-- 自訂主畫面圖示（將圖片存成 apple-touch-icon.png 放進專案資料夾） -->
+  <!-- 自訂主畫面圖示（將圖片存成 icon2.png 放進專案資料夾） -->
   <link rel="apple-touch-icon" sizes="180x180" href="./icon2.png" />
   <link rel="icon" type="image/png" sizes="180x180" href="./icon2.png" />
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: 僅載入 Noto Sans TC（已內含英數字元，加快首屏載入） -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -53,6 +53,11 @@
 </head>
 <body class="min-h-screen pb-24 selection:bg-ice-600 selection:text-white">
 
+  <!-- ==================== READ-ONLY ARCHIVE BANNER (30天後唯讀模式提示) ==================== -->
+  <div id="readOnlyArchiveBanner" class="hidden bg-ink-800 text-snow-100 px-3 py-2 text-xs text-center font-bold">
+  🔒唯讀模式（雲端已鎖定寫入，僅供瀏覽檢視）
+</div>
+
   <!-- ==================== PWA INSTALL BANNER ==================== -->
   <div id="pwaInstallBanner" class="hidden bg-gradient-to-r from-ice-600 to-ice-500 text-white px-3 py-2 text-xs">
     <div class="max-w-xl mx-auto flex items-center justify-between gap-2">
@@ -68,7 +73,6 @@
 
   <!-- ==================== TOP STICKY HEADER ==================== -->
   <header class="sticky top-0 z-30 bg-snow-50/95 backdrop-blur-md border-b-2 border-snow-200 shadow-2xs overflow-hidden">
-    <!-- Subtle Winter Namsan Tower & Snowflakes SVG Watermark -->
     <svg aria-hidden="true" viewBox="0 0 220 76" fill="none" class="pointer-events-none select-none absolute right-24 top-0 h-[74px] w-auto opacity-[0.14] text-ice-600">
       <path d="M168 6V16M164 16H172L170 25H166L164 16Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       <rect x="160" y="25" width="16" height="6" rx="2" stroke="currentColor" stroke-width="1.8"/>
@@ -87,6 +91,9 @@
           <div class="flex items-center gap-1.5">
             <span id="countdownBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-snow-100 border border-snow-300 text-ice-700">
               ❄️ 距離出發還有 -- 天
+            </span>
+            <span id="cloudSyncBadge" title="雲端同步狀態" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-snow-100 text-ink-500">
+              ⏳ 連線中
             </span>
           </div>
           <h1 class="text-lg sm:text-xl font-extrabold text-ink-800 tracking-tight mt-0.5 truncate">
@@ -158,7 +165,7 @@
         </div>
       </div>
 
-      <!-- Days 2 ~ 7 Wake-Up Time Card (太陽小圖示 + 起床了收合按鈕) -->
+      <!-- Days 2 ~ 7 Wake-Up Time Card -->
       <div id="dayWakeupCard" class="hidden"></div>
 
       <!-- Left-Aligned Compact Vertical Timeline Container -->
@@ -274,7 +281,7 @@
                class="flex flex-col items-center justify-center gap-1.5 w-full py-5 px-4 border-2 border-dashed border-ice-400/60 rounded-2xl bg-snow-50 hover:bg-snow-100 cursor-pointer transition active:scale-99">
           <i class="fa-solid fa-cloud-arrow-up text-xl text-ice-600"></i>
           <span class="text-xs font-extrabold text-ink-800">點擊從相簿選擇照片（支援多張一次發布）</span>
-          <span class="text-[10px] text-ink-500">支援 9:16 限動與 1:1 正方形照片</span>
+          <span class="text-[10px] text-ink-500">自動雲端最佳化壓縮，支援多張同步分享</span>
         </label>
         <div id="photoUploadStatusBox" class="hidden rounded-2xl bg-snow-100 border border-snow-300 px-3 py-2.5 space-y-2">
           <div class="flex items-center justify-between gap-2">
@@ -335,7 +342,7 @@
             <p class="text-xs text-ink-600 mt-1 leading-relaxed">許願空間，僅您本人與旅行者看得到！</p>
           </div>
           <button onclick="openAddWishModal()"
-                  class="shrink-0 py-2.5 px-3.5 rounded-2xl bg-ice-500 hover:bg-ice-600 active:scale-95 text-white font-bold text-xs shadow-sm flex flex-col items-center justify-center gap-1 transition">
+                  class="writable-only shrink-0 py-2.5 px-3.5 rounded-2xl bg-ice-500 hover:bg-ice-600 active:scale-95 text-white font-bold text-xs shadow-sm flex flex-col items-center justify-center gap-1 transition">
             <i class="fa-solid fa-camera text-sm"></i>
             <span>我要許願</span>
           </button>
@@ -1041,8 +1048,19 @@
   <!-- ==================== APP LOGIC ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // 👇👇👇 【步驟一】請把你的 Firebase 設定貼在這裡（從 Firebase 控制台 -> 專案設定 複製）👇👇👇
+    const firebaseConfig = {
+    apiKey: "AIzaSyDtqCoqDyrlJBeccLLnEv58Lxu4-Nk1Mhg",
+    authDomain: "my-first-app-fa416.firebaseapp.com",
+    projectId: "my-first-app-fa416",
+    storageBucket: "my-first-app-fa416.firebasestorage.app",
+    messagingSenderId: "214454395557",
+    appId: "1:214454395557:web:b7ca949b56fedce131634c"
+  };
+    // 👆👆👆 【步驟一結束】 👆👆👆
 
     const FIXED_TRAVELER_NAMES = ['小吉郎', '吉郎'];
     const SUPER_ADMIN_NAME = '小吉郎';
@@ -1378,10 +1396,13 @@
     let hasNewWishForTraveler = false;
 
     let tripState = loadLocalTripState();
+    let cloudPhotosList = []; // 獨立子集合存放照片，避免超過 Firestore 1MB 文件上限
     let db = null;
     let auth = null;
     let currentUser = null;
     let sharedDocRef = null;
+    let photosColRef = null;
+    let isCloudReadOnlyMode = false;
 
     let selectedTravelerName = '小吉郎';
     let tempWishPhotoDataUrl = '';
@@ -1445,6 +1466,7 @@
     }
 
     function isTravelerMode() {
+      if (isCloudReadOnlyMode) return false;
       return FIXED_TRAVELER_NAMES.includes(userIdentity.nickname) && userIdentity.role === 'traveler';
     }
 
@@ -1456,10 +1478,42 @@
       return !isTravelerMode();
     }
 
+    function getMergedAllPhotos() {
+      const legacyLocal = Array.isArray(tripState.diaries) ? tripState.diaries : [];
+      const combined = [...cloudPhotosList, ...legacyLocal];
+      const seen = new Set();
+      return combined.filter(p => {
+        if (!p || !p.id || seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      }).sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+    }
+
+    function setCloudSyncStatus(status, labelText) {
+      const badge = document.getElementById('cloudSyncBadge');
+      if (!badge) return;
+      badge.textContent = labelText;
+      if (status === 'connected') {
+        badge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-700';
+      } else if (status === 'readonly') {
+        badge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-800';
+      } else {
+        badge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-snow-100 border border-snow-300 text-ink-600';
+      }
+    }
+
+    function activateReadOnlyArchiveMode() {
+      if (isCloudReadOnlyMode) return;
+      isCloudReadOnlyMode = true;
+      setCloudSyncStatus('readonly', '🔒唯讀模式');
+      const banner = document.getElementById('readOnlyArchiveBanner');
+      if (banner) banner.classList.remove('hidden');
+      renderAll();
+    }
+
     // -------------------- PWA BANNER & DYNAMIC MANIFEST --------------------
     function initPwaBannerAndManifest() {
       try {
-        const iconSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%234A7C9B'/><path d='M90 22V44M82 44H98L94 62H86L82 44Z' fill='%23FFFFFF'/><rect x='74' y='62' width='32' height='12' rx='4' fill='%23D6E7F3'/><path d='M84 74L80 144M96 74L100 144' stroke='%23FFFFFF' stroke-width='5' stroke-linecap='round'/></svg>`;
         const manifestObj = {
           name: '首爾遊 動態看板',
           short_name: '首爾遊看板',
@@ -1521,6 +1575,7 @@
 
     // -------------------- VISITOR ANALYTICS --------------------
     function recordVisitorSessionStart(visitorName) {
+      if (isCloudReadOnlyMode) return;
       if (!visitorName || FIXED_TRAVELER_NAMES.includes(visitorName)) return;
       if (!tripState.visitorsLog) tripState.visitorsLog = {};
       const existing = tripState.visitorsLog[visitorName] || { name: visitorName, visitCount: 0, totalSeconds: 0, lastSeenAt: 0 };
@@ -1531,6 +1586,7 @@
     }
 
     function flushVisitorSessionDuration() {
+      if (isCloudReadOnlyMode) return;
       if (!userIdentity.configured || !isFamilyMode()) return;
       const vName = userIdentity.nickname;
       if (!vName || FIXED_TRAVELER_NAMES.includes(vName)) return;
@@ -1567,67 +1623,99 @@
       }, FIVE_HOURS_MS);
     }
 
-    // -------------------- FIREBASE SYNC (LOCAL FALLBACK) --------------------
+    // -------------------- FIREBASE SYNC --------------------
     async function initFirebaseSync() {
       try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        if (!firebaseConfig) return;
+        if (!MY_FIREBASE_CONFIG || !MY_FIREBASE_CONFIG.apiKey || MY_FIREBASE_CONFIG.apiKey.includes('請貼上')) {
+          setCloudSyncStatus('local', '💾 本機模式');
+          return;
+        }
 
-        const app = initializeApp(firebaseConfig);
+        const app = initializeApp(MY_FIREBASE_CONFIG);
         auth = getAuth(app);
         db = getFirestore(app);
 
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
+        try {
           await signInAnonymously(auth);
+        } catch (authErr) {
+          // 若未開啟匿名登入，仍嘗試直接以公開規則讀取 Firestore
         }
 
-        onAuthStateChanged(auth, (user) => {
-          if (!user) return;
-          currentUser = user;
-          sharedDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'seoul_trip_boards', 'main_board_v16');
+        sharedDocRef = doc(db, 'seoul_trip_2026', 'main_board');
+        photosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'photos');
 
-          onSnapshot(sharedDocRef, (snapshot) => {
-            if (snapshot.exists()) {
-              const incoming = snapshot.data();
-              tripState = { ...DEFAULT_TRIP_STATE, ...incoming };
-              ensureSevenDaysMeta(tripState);
-              if (!isValidPasscodeHash(tripState.travelerPasscodeHash)) {
-                tripState.travelerPasscodeHash = DEFAULT_PASSCODE_HASH;
-              }
-              delete tripState.travelerPasscode;
-              delete tripState.decisionState;
-              saveLocalTripState();
-              if (userIdentity.configured && isFamilyMode() && !window._sessionCounted) {
-                window._sessionCounted = true;
-                recordVisitorSessionStart(userIdentity.nickname);
-                syncStateEverywhere();
-              }
-              evaluateRelevantNotifications();
-              renderAll();
-            } else {
+        // 監聽主看板資料
+        onSnapshot(sharedDocRef, (snapshot) => {
+          if (!isCloudReadOnlyMode) {
+            setCloudSyncStatus('connected', '☁️ 已同步');
+          }
+          if (snapshot.exists()) {
+            const incoming = snapshot.data();
+            tripState = { ...DEFAULT_TRIP_STATE, ...incoming };
+            ensureSevenDaysMeta(tripState);
+            if (!isValidPasscodeHash(tripState.travelerPasscodeHash)) {
+              tripState.travelerPasscodeHash = DEFAULT_PASSCODE_HASH;
+            }
+            delete tripState.travelerPasscode;
+            delete tripState.decisionState;
+            saveLocalTripState();
+            if (userIdentity.configured && isFamilyMode() && !window._sessionCounted && !isCloudReadOnlyMode) {
+              window._sessionCounted = true;
+              recordVisitorSessionStart(userIdentity.nickname);
               syncStateEverywhere();
             }
-          });
+            evaluateRelevantNotifications();
+            renderAll();
+          } else {
+            syncStateEverywhere();
+          }
+        }, (err) => {
+          if (err && err.code === 'permission-denied') {
+            setCloudSyncStatus('local', '⚠️ 權限未開');
+          }
         });
-      } catch (err) {}
+
+        // 監聽獨立照片子集合（避開 1MB 單檔限制）
+        const photosQuery = query(photosColRef, orderBy('createdAtMs', 'desc'));
+        onSnapshot(photosQuery, (querySnap) => {
+          const list = [];
+          querySnap.forEach(docSnap => {
+            list.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          cloudPhotosList = list;
+          if (activeMainTab === 'diary') renderDiaryFeed();
+        });
+
+        onAuthStateChanged(auth, (user) => {
+          currentUser = user;
+        });
+      } catch (err) {
+        setCloudSyncStatus('local', '💾 本機模式');
+      }
     }
 
     async function syncStateEverywhere() {
       saveLocalTripState();
-      if (!currentUser || !sharedDocRef) return;
+      if (!sharedDocRef || isCloudReadOnlyMode) return;
       try {
-        await setDoc(sharedDocRef, {
+        // 主文件不塞入大量相簿照片，確保永遠遠低於 1MB 上限
+        const payloadToSync = {
           ...tripState,
+          diaries: [],
           notifications: (tripState.notifications || []).slice(0, 30),
           updatedAt: Date.now()
-        });
-      } catch (err) {}
+        };
+        await setDoc(sharedDocRef, payloadToSync);
+      } catch (err) {
+        if (err && (err.code === 'permission-denied' || String(err.message).includes('permission'))) {
+          activateReadOnlyArchiveMode();
+          showToast('🔒唯讀模式，無法修改雲端資料', 'fa-lock', 'text-amber-300');
+        }
+      }
     }
 
     function pushTargetedNotification(type, targetUser, title, detail, targetTab = 'itinerary') {
+      if (isCloudReadOnlyMode) return;
       const notif = {
         id: 'notif-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
         type,
@@ -1708,18 +1796,24 @@
       const isNewVisitor = !tripState.visitorsLog || !tripState.visitorsLog[rawName];
       userIdentity = { nickname: rawName, role: 'family', configured: true };
       saveUserIdentity();
-      window._sessionCounted = true;
-      recordVisitorSessionStart(rawName);
-      if (isNewVisitor) {
-        pushTargetedNotification('new_visitor', 'traveler', `👋 新增訪客 ${rawName}`, `${rawName} 進入了首爾遊動態看板`, 'itinerary');
+      if (!isCloudReadOnlyMode) {
+        window._sessionCounted = true;
+        recordVisitorSessionStart(rawName);
+        if (isNewVisitor) {
+          pushTargetedNotification('new_visitor', 'traveler', `👋 新增訪客 ${rawName}`, `${rawName} 進入了首爾遊動態看板`, 'itinerary');
+        }
+        syncStateEverywhere();
       }
-      syncStateEverywhere();
       document.getElementById('identityModal').classList.add('hidden');
       renderAll();
       showToast(`歡迎 ${rawName}！`);
     };
 
     window.verifyAndLoginTraveler = function() {
+      if (isCloudReadOnlyMode) {
+        showToast('🔒 目前為唯讀封存模式，無法切換編輯權限', 'fa-lock', 'text-amber-300');
+        return;
+      }
       const code = document.getElementById('travelerPasscodeInput').value.trim();
       const inputHash = computeSaltedPasscodeHash(code);
       const expectedHash = isValidPasscodeHash(tripState.travelerPasscodeHash) ? tripState.travelerPasscodeHash : DEFAULT_PASSCODE_HASH;
@@ -1736,6 +1830,7 @@
     };
 
     window.resetTravelerPasscodeToDefault = function() {
+      if (isCloudReadOnlyMode) return;
       tripState.travelerPasscodeHash = DEFAULT_PASSCODE_HASH;
       syncStateEverywhere();
       showToast('已恢復預設旅行者密碼');
@@ -1902,6 +1997,10 @@
         document.querySelectorAll('.traveler-only').forEach(el => el.classList.add('hidden'));
       }
 
+      document.querySelectorAll('.writable-only').forEach(el => {
+        isCloudReadOnlyMode ? el.classList.add('hidden') : el.classList.remove('hidden');
+      });
+
       if (isSuperAdmin()) {
         crownBtn.classList.remove('hidden');
         const visitors = Object.values(tripState.visitorsLog || {});
@@ -1934,6 +2033,10 @@
             { id: 'diary', label: '照片', icon: 'fa-images' },
             { id: 'shopping', label: '採購與許願', icon: 'fa-bag-shopping', dot: false }
           ];
+
+      if (!tabs.some(t => t.id === activeMainTab)) {
+        activeMainTab = 'itinerary';
+      }
 
       navContainer.className = `mt-2.5 bg-snow-100 border border-snow-200 p-1 rounded-2xl flex items-center gap-1 overflow-x-auto no-scrollbar`;
       navContainer.innerHTML = tabs.map(t => {
@@ -2085,7 +2188,7 @@
               <circle cx="67" cy="21" r="1.8" fill="#6C9EBF"/>
             </svg>
             <p class="text-sm font-extrabold text-ink-800">這一天目前還沒有行程</p>
-            <p class="text-[11px] text-ink-500 mt-1">點擊右上角「新增行程」開始規劃冬日首爾散步路線</p>
+            <p class="text-[11px] text-ink-500 mt-1">冬日首爾散步路線一覽</p>
           </div>`;
         return;
       }
@@ -2115,7 +2218,6 @@
           container.appendChild(transitRow);
         }
 
-        // 小行程（subItems）：參考圖改為像地圖一樣的迷你圖標按鈕放在右側，點擊彈出相簿查看/切換/刪除
         const subItemsHtml = hasSubItems ? `
           <div class="mt-2.5 space-y-1.5">
             ${item.subItems.map((sub, sIdx) => {
@@ -2131,7 +2233,7 @@
                 <div class="${subDimClass} border rounded-xl px-2.5 py-2 flex items-start justify-between gap-2 transition-all">
                   <div class="flex items-start gap-2 min-w-0 flex-1">
                     ${isTravelerMode() ? `
-                      <button type="button" onclick="toggleSubItemCompleted('${item.id}', ${sIdx})" title="打勾完成此小站（僅旅行者可見）"
+                      <button type="button" onclick="toggleSubItemCompleted('${item.id}', ${sIdx})" title="打勾完成此小站"
                               class="mt-0.5 w-4 h-4 rounded border ${isSubDone ? 'bg-ice-600 border-ice-600 text-white' : 'bg-white border-snow-300 text-transparent hover:border-ice-600'} flex items-center justify-center shrink-0 transition">
                         <i class="fa-solid fa-check text-[9px]"></i>
                       </button>
@@ -2704,7 +2806,7 @@
       if (!row || files.length === 0) return;
       if (!Array.isArray(row._refPhotos)) row._refPhotos = [];
       files.forEach(file => {
-        compressImageFile(file, 720, 0.78, (dataUrl) => {
+        compressImageFile(file, 480, 0.65, (dataUrl) => {
           row._refPhotos.push(dataUrl);
           renderSubRowRefPreview(row);
         });
@@ -2781,7 +2883,7 @@
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
       files.forEach(file => {
-        compressImageFile(file, 720, 0.78, (dataUrl) => {
+        compressImageFile(file, 480, 0.65, (dataUrl) => {
           tempMainRefPhotos.push(dataUrl);
           renderMainRefPhotosPreview();
         });
@@ -3030,7 +3132,7 @@
     };
     window.deleteExpenseItem = (id) => { if (isTravelerMode()) { tripState.expenses = tripState.expenses.filter(e => e.id !== id); syncStateEverywhere(); renderExpensesSection(); } };
 
-    // -------------------- TAB 3: 照片 (標題「相簿」・有照片的天數才建立相簿) --------------------
+    // -------------------- TAB 3: 照片 (獨立子集合雲端同步，不佔用主檔空間) --------------------
     window.handleDirectPhotoUpload = function(event) {
       if (!isTravelerMode()) return;
       const files = Array.from(event.target.files || []);
@@ -3053,7 +3155,7 @@
       const total = files.length;
 
       files.forEach((file, idx) => {
-        compressImageFile(file, 960, 0.85, (dataUrl) => {
+        compressImageFile(file, 880, 0.78, (dataUrl) => {
           pendingDiaryUploadPhotos[idx] = dataUrl;
           processedCount++;
           const pct = Math.round((processedCount / total) * 100);
@@ -3072,7 +3174,7 @@
       event.target.value = '';
     };
 
-    window.publishPendingDiaryPhotos = function() {
+    window.publishPendingDiaryPhotos = async function() {
       if (!isTravelerMode() || pendingDiaryUploadPhotos.length === 0) return;
       const validPhotos = pendingDiaryUploadPhotos.filter(Boolean);
       if (validPhotos.length === 0) return;
@@ -3080,18 +3182,29 @@
       const dayNum = parseInt(document.getElementById('diaryDaySelect').value, 10);
       const dayMeta = tripState.daysMeta[dayNum] || DEFAULT_TRIP_STATE.daysMeta[dayNum];
       const timeStr = `${new Date().getMonth() + 1}/${new Date().getDate()} ${getCurrentTimeStr()}`;
+      const nowMs = Date.now();
 
-      if (!Array.isArray(tripState.diaries)) tripState.diaries = [];
-      validPhotos.forEach((dataUrl, idx) => {
-        tripState.diaries.unshift({
-          id: `diary-${Date.now()}-${idx}`,
+      for (let idx = 0; idx < validPhotos.length; idx++) {
+        const photoPayload = {
           day: dayNum,
           date: dayMeta.date,
-          collageDataUrl: dataUrl,
+          collageDataUrl: validPhotos[idx],
           author: userIdentity.nickname,
-          publishedAt: timeStr
-        });
-      });
+          publishedAt: timeStr,
+          createdAtMs: nowMs + idx
+        };
+
+        if (photosColRef && !isCloudReadOnlyMode) {
+          try {
+            await addDoc(photosColRef, photoPayload);
+          } catch (err) {
+            if (err && err.code === 'permission-denied') activateReadOnlyArchiveMode();
+          }
+        } else {
+          if (!Array.isArray(tripState.diaries)) tripState.diaries = [];
+          tripState.diaries.unshift({ id: `diary-${nowMs}-${idx}`, ...photoPayload });
+        }
+      }
 
       const count = validPhotos.length;
       pendingDiaryUploadPhotos = [];
@@ -3103,15 +3216,20 @@
       showToast(`已成功發布 ${count} 張照片！`);
     };
 
-    window.deleteDiaryPhoto = function(diaryId) {
+    window.deleteDiaryPhoto = async function(diaryId) {
       if (!isTravelerMode()) return;
+      if (photosColRef && !isCloudReadOnlyMode) {
+        try {
+          await deleteDoc(doc(db, 'seoul_trip_2026', 'main_board', 'photos', diaryId));
+        } catch (e) {}
+      }
       tripState.diaries = (tripState.diaries || []).filter(d => d.id !== diaryId);
       syncStateEverywhere();
       renderAll();
     };
 
     window.openDayPhotoFolder = function(dayNum) {
-      const photos = (tripState.diaries || []).filter(d => Number(d.day) === Number(dayNum));
+      const photos = getMergedAllPhotos().filter(d => Number(d.day) === Number(dayNum));
       if (photos.length === 0) return;
       const meta = tripState.daysMeta[dayNum] || DEFAULT_TRIP_STATE.daysMeta[dayNum];
       activeLightboxRefContext = null;
@@ -3180,10 +3298,9 @@
       }
     };
 
-    window.deleteCurrentLightboxPhoto = function() {
+    window.deleteCurrentLightboxPhoto = async function() {
       if (!isTravelerMode() || !activeAlbumPhotos || activeAlbumPhotos.length === 0) return;
 
-      // 若是從行程參考圖點開的燈箱，刪除該張參考圖
       if (activeLightboxRefContext) {
         const { itemId, subIdx, label } = activeLightboxRefContext;
         const item = tripState.items.find(i => i.id === itemId);
@@ -3217,15 +3334,12 @@
         return;
       }
 
-      // 否則刪除照片分頁相簿照片
       const target = activeAlbumPhotos[activeAlbumIndex];
-      tripState.diaries = (tripState.diaries || []).filter(d => d.id !== target.id);
+      await deleteDiaryPhoto(target.id);
       activeAlbumPhotos.splice(activeAlbumIndex, 1);
       if (activeAlbumIndex >= activeAlbumPhotos.length) {
         activeAlbumIndex = Math.max(0, activeAlbumPhotos.length - 1);
       }
-      syncStateEverywhere();
-      renderAll();
       if (activeAlbumPhotos.length === 0) {
         closeLightbox();
       } else {
@@ -3252,7 +3366,7 @@
 
     function renderDiaryFeed() {
       const container = document.getElementById('diaryFeedContainer');
-      const allPhotos = tripState.diaries || [];
+      const allPhotos = getMergedAllPhotos();
       if (allPhotos.length === 0) {
         container.innerHTML = `
           <div class="sketch-card bg-white border-dashed border-snow-300 rounded-3xl p-8 text-center flex flex-col items-center">
@@ -3277,7 +3391,6 @@
       const latest = allPhotos[0];
       const latestMeta = tripState.daysMeta[latest.day] || DEFAULT_TRIP_STATE.daysMeta[latest.day];
 
-      // 只要那天有照片才設新的相簿，沒有照片的天數不會建立相簿
       const activeDays = [];
       for (let d = 1; d <= TOTAL_TRIP_DAYS; d++) {
         if (allPhotos.some(p => Number(p.day) === d)) activeDays.push(d);
@@ -3297,7 +3410,6 @@
       }).join('');
 
       container.innerHTML = `
-        <!-- 上方最新照片（滿寬自適應，無左右白邊） -->
         <article class="card-enter sketch-card bg-white border-snow-200 rounded-3xl overflow-hidden">
           <div class="px-4 py-2.5 bg-snow-100/80 border-b border-snow-200 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -3319,7 +3431,6 @@
           </div>
         </article>
 
-        <!-- 下方精巧日期小圓方相簿（有照片的天數才建立） -->
         ${activeDays.length > 0 ? `
           <div class="space-y-2 pt-1">
             <div class="flex items-center justify-between px-1">
@@ -3381,7 +3492,7 @@
               <path d="M36 35V46M30.5 40.5H41.5M32 36.5L40 44.5M40 36.5L32 44.5" stroke="#4A7C9B" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
             <p class="text-xs font-extrabold text-ink-800">此通路目前沒有商品</p>
-            <p class="text-[11px] text-ink-500 mt-0.5">可點擊上方「+ 新增」或到許願池新增想買好物</p>
+            <p class="text-[11px] text-ink-500 mt-0.5">可到許願池新增想買好物</p>
           </div>`;
         return;
       }
@@ -3418,7 +3529,7 @@
               <p class="text-xs sm:text-sm font-bold text-ink-800 leading-snug ${item.bought ? 'line-through text-ink-500' : ''}">${item.name}</p>
             </div>
             ${metaParts.length > 0 ? `<p class="text-[11px] text-ink-600 mt-0.5">${metaParts.join(' ・ ')}</p>` : ''}
-            ${isFamilyMode() && !item.bought ? `
+            ${isFamilyMode() && !item.bought && !isCloudReadOnlyMode ? `
               <div class="mt-1.5 flex items-center gap-1.5">
                 ${myCurrentQty === 0
                   ? `<button onclick="familyTogglePlusOne('${item.id}', 1)" class="px-2.5 py-1 rounded-lg bg-ice-500 text-white text-[11px] font-bold active:scale-95">+1</button>`
@@ -3435,6 +3546,7 @@
 
     window.setStoreFilter = (id) => { currentStoreFilter = id; renderShoppingSection(); };
     window.familyTogglePlusOne = function(itemId, delta) {
+      if (isCloudReadOnlyMode) return;
       const item = tripState.shoppingItems.find(i => i.id === itemId);
       if (!item) return;
       if (!item.requests) item.requests = {};
@@ -3447,7 +3559,7 @@
     };
     function updateBottomFamilyWishlistBar() {
       const bar = document.getElementById('familyWishlistBar');
-      if (!isFamilyMode() || activeMainTab !== 'shopping' || shoppingSubMode !== 'official') { bar.classList.add('hidden'); return; }
+      if (!isFamilyMode() || isCloudReadOnlyMode || activeMainTab !== 'shopping' || shoppingSubMode !== 'official') { bar.classList.add('hidden'); return; }
       const myName = userIdentity.nickname || '家人';
       let count = 0;
       tripState.shoppingItems.forEach(i => { count += ((i.requests && i.requests[myName]) || 0); });
@@ -3456,6 +3568,7 @@
       bar.classList.remove('hidden');
     }
     window.submitFamilyPlusOneNotification = function() {
+      if (isCloudReadOnlyMode) return;
       const myName = userIdentity.nickname || '家人';
       pushTargetedNotification('wishlist_private', 'traveler', `🙋‍♂️ ${myName} 更新了代購數量`, '已同步至購物清單統計中', 'shopping');
       syncStateEverywhere();
@@ -3482,6 +3595,7 @@
 
     // Wishpool
     window.openAddWishModal = () => {
+      if (isCloudReadOnlyMode) return;
       tempWishPhotoDataUrl = '';
       document.getElementById('wishNameInput').value = '';
       document.getElementById('wishQtyInput').value = '1';
@@ -3493,7 +3607,7 @@
     window.handleWishPhotoSelect = function(e) {
       const file = e.target.files[0];
       if (!file) return;
-      compressImageFile(file, 480, 0.72, (dataUrl) => {
+      compressImageFile(file, 420, 0.65, (dataUrl) => {
         tempWishPhotoDataUrl = dataUrl;
         document.getElementById('wishPhotoPreviewImg').src = dataUrl;
         document.getElementById('wishPhotoPreviewBox').classList.remove('hidden');
@@ -3502,6 +3616,7 @@
     window.removeWishPhoto = () => { tempWishPhotoDataUrl = ''; document.getElementById('wishPhotoPreviewBox').classList.add('hidden'); };
     window.saveNewWishItem = function(e) {
       e.preventDefault();
+      if (isCloudReadOnlyMode) return;
       const stores = Array.from(document.querySelectorAll('.wish-store-cb:checked')).map(cb => cb.value);
       const primaryStore = stores[0] || 'other';
       const qty = Math.max(1, parseInt(document.getElementById('wishQtyInput').value || '1', 10));
@@ -3539,6 +3654,7 @@
       showToast(`已回覆「${statusText}」並通知 ${w.author}`);
     };
     window.deleteWishItem = (wishId) => {
+      if (isCloudReadOnlyMode) return;
       const target = (tripState.wishpoolItems || []).find(w => w.id === wishId);
       if (!target) return;
       if (!isTravelerMode() && target.author !== (userIdentity.nickname || '')) return;
@@ -3566,314 +3682,4 @@
               <path d="M62 14L63.5 18.5L68 20L63.5 21.5L62 26L60.5 21.5L56 20L60.5 18.5L62 14Z" fill="#6C9EBF"/>
             </svg>
             <p class="text-sm font-extrabold text-ink-800">目前還沒有許願項目</p>
-            <p class="text-[11px] text-ink-500 mt-1">點擊上方「我要許願」，只有您與旅行者看得到喔！</p>
-          </div>`;
-        return;
-      }
-      listEl.innerHTML = visibleWishes.map(wish => {
-        const statusBadge = wish.status === 'bought'
-          ? '<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-xl bg-emerald-100 text-emerald-800">✅ 購買完成</span>'
-          : wish.status === 'not_found'
-          ? '<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-xl bg-rose-100 text-rose-800">❌ 未找到</span>'
-          : '<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-xl bg-snow-100 border border-snow-300 text-ice-700">🔍 找尋中</span>';
-
-        return `
-          <div class="card-enter sketch-card bg-white rounded-3xl p-3.5 border-snow-300 space-y-2.5">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                ${isTravelerMode() ? `<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-xl bg-ice-600 text-white">🙋 ${wish.author}</span>` : ''}
-                ${statusBadge}
-              </div>
-              <button onclick="deleteWishItem('${wish.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
-            </div>
-            <div class="flex items-start justify-between gap-2">
-              <div>
-                <h3 class="text-sm font-extrabold text-ink-800">${wish.name}</h3>
-                ${wish.note ? `<p class="text-xs text-ink-600 mt-0.5">${wish.note}</p>` : ''}
-              </div>
-              <span class="text-xs font-extrabold text-ice-700 bg-snow-100 border border-snow-300 px-2 py-0.5 rounded-lg shrink-0">x${wish.qty}</span>
-            </div>
-            ${wish.photoDataUrl ? `<img src="${wish.photoDataUrl}" onclick="openLightboxSrc('${wish.photoDataUrl}', '${wish.name}')" class="w-full max-h-44 object-contain rounded-xl border border-snow-200 bg-snow-50 cursor-pointer" />` : ''}
-            ${isTravelerMode() ? `
-              <div class="pt-1 border-t border-snow-100 grid grid-cols-2 gap-2">
-                <button type="button" onclick="markWishResult('${wish.id}', 'bought')"
-                        class="py-2 px-2 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1 ${
-                          wish.status === 'bought'
-                            ? 'bg-emerald-600 text-white shadow-2xs'
-                            : 'bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800'
-                        }">
-                  <span>✅ 購買完成</span>
-                </button>
-                <button type="button" onclick="markWishResult('${wish.id}', 'not_found')"
-                        class="py-2 px-2 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1 ${
-                          wish.status === 'not_found'
-                            ? 'bg-rose-600 text-white shadow-2xs'
-                            : 'bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-800'
-                        }">
-                  <span>❌ 未找到</span>
-                </button>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      }).join('');
-    }
-
-    // -------------------- TAB 5: LUGGAGE & PRE-TRIP PREP --------------------
-    function renderLuggageAndPrepSection() {
-      const prepItems = tripState.prepItems || [];
-      document.getElementById('prepProgressText').textContent = `已完成 ${prepItems.filter(i => i.checked).length} / ${prepItems.length} 項`;
-      document.getElementById('prepListContainer').innerHTML = prepItems.map(item => `
-        <div class="sketch-card bg-white border-snow-200 rounded-2xl p-3 flex items-start gap-2.5 ${item.checked ? 'opacity-60' : ''}">
-          <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="togglePrepCheck('${item.id}')" class="mt-0.5 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
-          <div class="min-w-0 flex-1">
-            <p class="text-xs sm:text-sm font-bold text-ink-800 ${item.checked ? 'line-through text-ink-500' : ''}">${item.title}</p>
-            ${item.note ? `<p class="text-[11px] text-ink-500 mt-0.5">${item.note}</p>` : ''}
-          </div>
-          <div class="flex items-center gap-1 shrink-0">
-            ${item.url ? `
-              <a href="${item.url}" target="_blank" rel="noopener noreferrer"
-                 class="px-2 py-1 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 text-[10px] font-extrabold inline-flex items-center gap-0.5 transition">
-                <span>前往 ↗</span>
-              </a>
-            ` : ''}
-            <button onclick="deletePrepItem('${item.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
-          </div>
-        </div>
-      `).join('');
-
-      const notesList = tripState.importantNotes || [];
-      const notesContainer = document.getElementById('importantNotesListContainer');
-      if (notesContainer) {
-        notesContainer.innerHTML = notesList.map(n => `
-          <div id="note-card-${n.id}" class="sketch-card bg-white border ${n.borderStyle || 'border-snow-200'} rounded-2xl overflow-hidden">
-            <div onclick="toggleImportantNote('${n.id}')" class="p-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-snow-50 transition select-none">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="px-2 py-0.5 rounded-lg ${n.badgeStyle || 'bg-ice-600 text-white'} text-[10px] font-bold shrink-0">${n.badge || '備註'}</span>
-                <h4 class="text-xs sm:text-sm font-extrabold text-ink-800 truncate">${n.title}</h4>
-              </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                ${!n.isDefault ? `
-                  <button type="button" onclick="event.stopPropagation(); deleteImportantNote('${n.id}')" class="text-ice-500 hover:text-ice-700 p-1">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
-                  </button>
-                ` : ''}
-                <i class="fa-solid ${n.expanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-xs text-ink-500 transition-transform"></i>
-              </div>
-            </div>
-            ${n.expanded ? `
-              <div class="px-3.5 pb-3.5 pt-1 border-t border-snow-100 space-y-1.5 text-xs text-ink-700 bg-snow-50/70 leading-relaxed">
-                ${(n.lines || []).map(line => `<div>${line}</div>`).join('')}
-              </div>
-            ` : ''}
-          </div>
-        `).join('');
-      }
-
-      const lugItems = tripState.luggageItems || [];
-      document.getElementById('luggageProgressText').textContent = `已打包 ${lugItems.filter(i => i.checked).length} / ${lugItems.length} 項`;
-      document.getElementById('luggageListContainer').innerHTML = lugItems.map(item => `
-        <div class="sketch-card bg-white border-snow-200 rounded-2xl p-3 flex items-start gap-2.5 ${item.checked ? 'opacity-60' : ''}">
-          <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleLuggageCheck('${item.id}')" class="mt-0.5 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
-          <div class="min-w-0 flex-1">
-            <p class="text-xs sm:text-sm font-bold text-ink-800 ${item.checked ? 'line-through text-ink-500' : ''}">${item.title}</p>
-            ${item.note ? `<p class="text-[11px] text-ink-500 mt-0.5">${item.note}</p>` : ''}
-          </div>
-          <div class="flex items-center gap-1 shrink-0">
-            ${item.url ? `
-              <a href="${item.url}" target="_blank" rel="noopener noreferrer"
-                 class="px-2 py-1 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 text-[10px] font-extrabold inline-flex items-center gap-0.5 transition">
-                <span>前往 ↗</span>
-              </a>
-            ` : ''}
-            <button onclick="deleteLuggageItem('${item.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    window.toggleImportantNote = function(noteId) {
-      const note = (tripState.importantNotes || []).find(n => n.id === noteId);
-      if (!note) return;
-      note.expanded = !note.expanded;
-      syncStateEverywhere();
-      renderLuggageAndPrepSection();
-    };
-
-    window.openAddNoteModal = function() {
-      if (!isTravelerMode()) return;
-      document.getElementById('newNoteTitleInput').value = '';
-      document.getElementById('newNoteContentInput').value = '';
-      document.getElementById('addNoteModal').classList.remove('hidden');
-    };
-
-    window.closeAddNoteModal = () => document.getElementById('addNoteModal').classList.add('hidden');
-
-    window.saveNewImportantNote = function(e) {
-      e.preventDefault();
-      if (!isTravelerMode()) return;
-      const title = document.getElementById('newNoteTitleInput').value.trim();
-      const content = document.getElementById('newNoteContentInput').value.trim();
-      if (!title || !content) return;
-      if (!Array.isArray(tripState.importantNotes)) tripState.importantNotes = [];
-      const nextNum = tripState.importantNotes.length + 1;
-      const lines = content.split('\n').map(l => l.trim()).filter(Boolean).map(l => `• ${l}`);
-      tripState.importantNotes.push({
-        id: 'note-' + Date.now(),
-        badge: `備註 ${nextNum}`,
-        badgeStyle: 'bg-ice-600 text-white',
-        borderStyle: 'border-snow-200',
-        title,
-        lines,
-        expanded: true,
-        isDefault: false
-      });
-      closeAddNoteModal();
-      syncStateEverywhere();
-      renderLuggageAndPrepSection();
-      showToast('已新增備註！');
-    };
-
-    window.deleteImportantNote = function(noteId) {
-      if (!isTravelerMode()) return;
-      tripState.importantNotes = (tripState.importantNotes || []).filter(n => n.id !== noteId);
-      syncStateEverywhere();
-      renderLuggageAndPrepSection();
-    };
-
-    window.togglePrepCheck = (id) => { const i = tripState.prepItems.find(x => x.id === id); if (i) { i.checked = !i.checked; syncStateEverywhere(); renderLuggageAndPrepSection(); } };
-    window.deletePrepItem = (id) => { tripState.prepItems = tripState.prepItems.filter(x => x.id !== id); syncStateEverywhere(); renderLuggageAndPrepSection(); };
-    window.toggleLuggageCheck = (id) => { const i = tripState.luggageItems.find(x => x.id === id); if (i) { i.checked = !i.checked; syncStateEverywhere(); renderLuggageAndPrepSection(); } };
-    window.deleteLuggageItem = (id) => { tripState.luggageItems = tripState.luggageItems.filter(x => x.id !== id); syncStateEverywhere(); renderLuggageAndPrepSection(); };
-
-    window.openAddPrepModal = function() {
-      if (!isTravelerMode()) return;
-      document.getElementById('addCheckItemType').value = 'prep';
-      document.getElementById('addCheckItemModalTitle').textContent = '新增行前準備事項';
-      document.getElementById('checkItemTitleInput').value = '';
-      document.getElementById('checkItemNoteInput').value = '';
-      document.getElementById('checkItemUrlInput').value = '';
-      document.getElementById('addCheckItemModal').classList.remove('hidden');
-    };
-
-    window.openAddLuggageModal = function() {
-      if (!isTravelerMode()) return;
-      document.getElementById('addCheckItemType').value = 'luggage';
-      document.getElementById('addCheckItemModalTitle').textContent = '新增行李打包項目';
-      document.getElementById('checkItemTitleInput').value = '';
-      document.getElementById('checkItemNoteInput').value = '';
-      document.getElementById('checkItemUrlInput').value = '';
-      document.getElementById('addCheckItemModal').classList.remove('hidden');
-    };
-
-    window.closeAddCheckItemModal = () => document.getElementById('addCheckItemModal').classList.add('hidden');
-
-    window.saveNewCheckItem = function(e) {
-      e.preventDefault();
-      if (!isTravelerMode()) return;
-      const type = document.getElementById('addCheckItemType').value;
-      const title = document.getElementById('checkItemTitleInput').value.trim();
-      const note = document.getElementById('checkItemNoteInput').value.trim();
-      const url = document.getElementById('checkItemUrlInput').value.trim();
-      if (!title) return;
-      if (type === 'prep') {
-        tripState.prepItems.unshift({ id: 'prep-' + Date.now(), title, note, url, checked: false });
-      } else {
-        tripState.luggageItems.unshift({ id: 'lug-' + Date.now(), title, note, url, checked: false });
-      }
-      closeAddCheckItemModal();
-      syncStateEverywhere();
-      renderLuggageAndPrepSection();
-      showToast('已新增項目！');
-    };
-
-    // -------------------- NOTIFICATIONS & UTILS --------------------
-    window.openNotificationsModal = function() {
-      hasUnreadNotifs = false;
-      const myNotifs = getMyVisibleNotifications();
-      if (myNotifs.length > 0) { lastSeenNotifId = myNotifs[0].id; localStorage.setItem(SEEN_NOTIF_KEY, lastSeenNotifId); }
-      renderHeaderAndNav();
-      document.getElementById('notificationsListContainer').innerHTML = myNotifs.length === 0
-        ? `<p class="text-xs text-ink-500 text-center py-6">目前還沒有通知</p>`
-        : myNotifs.map(n => `
-          <div onclick="closeNotificationsModal(); switchMainTab('${n.targetTab || 'itinerary'}')" class="p-3 rounded-2xl bg-snow-50 border border-snow-200 cursor-pointer">
-            <div class="flex justify-between"><p class="text-xs font-bold text-ink-800">${n.title}</p><span class="text-[10px] text-ink-500">${n.time}</span></div>
-            <p class="text-[11px] text-ink-600 mt-1">${n.detail}</p>
-          </div>
-        `).join('');
-      document.getElementById('notificationsModal').classList.remove('hidden');
-    };
-    window.closeNotificationsModal = () => document.getElementById('notificationsModal').classList.add('hidden');
-
-    function compressImageFile(file, maxWidth, quality, callback) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          let w = img.width, h = img.height;
-          if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          callback(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    window.openLightboxSrc = (src, caption) => {
-      activeAlbumPhotos = [];
-      activeLightboxRefContext = null;
-      document.getElementById('lightboxImg').src = src;
-      document.getElementById('lightboxCaption').textContent = caption || '';
-      document.getElementById('lightboxCounter').classList.add('hidden');
-      document.getElementById('lightboxProgressDots').classList.add('hidden');
-      document.getElementById('lightboxPrevBtn').classList.add('hidden');
-      document.getElementById('lightboxNextBtn').classList.add('hidden');
-      document.getElementById('lightboxPrivacyToggleBtn').classList.add('hidden');
-      document.getElementById('lightboxDeleteBtn').classList.add('hidden');
-      document.getElementById('lightboxHintText').textContent = '點擊右上角關閉';
-      document.getElementById('lightboxModal').classList.remove('hidden');
-    };
-    window.closeLightbox = () => {
-      activeAlbumPhotos = [];
-      activeLightboxRefContext = null;
-      document.getElementById('lightboxModal').classList.add('hidden');
-    };
-
-    function getCurrentTimeStr() {
-      const now = new Date();
-      return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    }
-
-    let toastTimer = null;
-    function showToast(message, iconClass = 'fa-circle-check', colorClass = 'text-emerald-400') {
-      const toast = document.getElementById('toast');
-      document.getElementById('toastMessage').textContent = message;
-      document.getElementById('toastIcon').className = `fa-solid ${iconClass} ${colorClass}`;
-      toast.classList.remove('opacity-0', '-translate-y-2');
-      toast.classList.add('opacity-100', 'translate-y-0');
-      if (toastTimer) clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => {
-        toast.classList.remove('opacity-100', 'translate-y-0');
-        toast.classList.add('opacity-0', '-translate-y-2');
-      }, 2800);
-    }
-
-    // -------------------- BOOTSTRAP --------------------
-    window.addEventListener('DOMContentLoaded', () => {
-      initPwaBannerAndManifest();
-      initLightboxTouchSwipe();
-      renderAll();
-      initFirebaseSync();
-      initVisitorSessionTracking();
-      if (!userIdentity.configured) {
-        setTimeout(() => { openIdentityModal(); }, 250);
-      } else if (isFamilyMode()) {
-        activeSessionStartMs = Date.now();
-      }
-    });
-  </script>
-</body>
-</html>
+            <p class="text-[11px] text-ink
