@@ -2252,12 +2252,11 @@
                   <div class="flex items-center gap-1 shrink-0">
                     ${canViewSubRefs ? `
                       <button type="button" onclick="openRefPhotosLightbox('${item.id}', ${sIdx}, 0)"
-                              title="${sub.refPhotosPublic ? '查看公開參考圖' : '查看僅旅行者可見參考圖'}"
-                              class="h-7 px-2 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 inline-flex items-center gap-1 text-[10px] font-extrabold active:scale-95 transition">
-                        <i class="fa-solid fa-image text-[11px]"></i>
-                        <span>${subRefs.length}</span>
-                        ${isTravelerMode() ? `<i class="fa-solid ${sub.refPhotosPublic ? 'fa-globe' : 'fa-lock'} text-[8px] opacity-75"></i>` : ''}
-                      </button>
+        title="查看參考圖"
+        aria-label="查看參考圖"
+        class="w-7 h-7 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 inline-flex items-center justify-center active:scale-95 transition">
+  <i class="fa-solid fa-image text-[11px]"></i>
+</button>
                     ` : ''}
                     ${hasExtLink ? `
                       <a href="${sub.linkUrl}" target="_blank" rel="noopener noreferrer" title="前往訂票網站"
