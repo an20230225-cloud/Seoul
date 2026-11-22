@@ -3682,4 +3682,316 @@
               <path d="M62 14L63.5 18.5L68 20L63.5 21.5L62 26L60.5 21.5L56 20L60.5 18.5L62 14Z" fill="#6C9EBF"/>
             </svg>
             <p class="text-sm font-extrabold text-ink-800">目前還沒有許願項目</p>
-            <p class="text-[11px] text-ink
+            <p class="text-sm font-extrabold text-ink-800">目前還沒有許願項目</p>
+            <p class="text-[11px] text-ink-500 mt-1">點擊上方「我要許願」，只有您與旅行者看得到喔！</p>
+          </div>`;
+        return;
+      }
+      listEl.innerHTML = visibleWishes.map(wish => {
+        const statusBadge = wish.status === 'bought'
+          ? '<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-xl bg-emerald-100 text-emerald-800">✅ 購買完成</span>'
+          : wish.status === 'not_found'
+          ? '<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-xl bg-rose-100 text-rose-800">❌ 未找到</span>'
+          : '<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-xl bg-snow-100 border border-snow-300 text-ice-700">🔍 找尋中</span>';
+
+        return `
+          <div class="card-enter sketch-card bg-white rounded-3xl p-3.5 border-snow-300 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${isTravelerMode() ? `<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-xl bg-ice-600 text-white">🙋 ${wish.author}</span>` : ''}
+                ${statusBadge}
+              </div>
+              <button onclick="deleteWishItem('${wish.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            </div>
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h3 class="text-sm font-extrabold text-ink-800">${wish.name}</h3>
+                ${wish.note ? `<p class="text-xs text-ink-600 mt-0.5">${wish.note}</p>` : ''}
+              </div>
+              <span class="text-xs font-extrabold text-ice-700 bg-snow-100 border border-snow-300 px-2 py-0.5 rounded-lg shrink-0">x${wish.qty}</span>
+            </div>
+            ${wish.photoDataUrl ? `<img src="${wish.photoDataUrl}" onclick="openLightboxSrc('${wish.photoDataUrl}', '${wish.name}')" class="w-full max-h-44 object-contain rounded-xl border border-snow-200 bg-snow-50 cursor-pointer" />` : ''}
+            ${isTravelerMode() ? `
+              <div class="pt-1 border-t border-snow-100 grid grid-cols-2 gap-2">
+                <button type="button" onclick="markWishResult('${wish.id}', 'bought')"
+                        class="py-2 px-2 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1 ${
+                          wish.status === 'bought'
+                            ? 'bg-emerald-600 text-white shadow-2xs'
+                            : 'bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800'
+                        }">
+                  <span>✅ 購買完成</span>
+                </button>
+                <button type="button" onclick="markWishResult('${wish.id}', 'not_found')"
+                        class="py-2 px-2 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1 ${
+                          wish.status === 'not_found'
+                            ? 'bg-rose-600 text-white shadow-2xs'
+                            : 'bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-800'
+                        }">
+                  <span>❌ 未找到</span>
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // -------------------- TAB 5: LUGGAGE & PRE-TRIP PREP --------------------
+    function renderLuggageAndPrepSection() {
+      const prepItems = tripState.prepItems || [];
+      document.getElementById('prepProgressText').textContent = `已完成 ${prepItems.filter(i => i.checked).length} / ${prepItems.length} 項`;
+      document.getElementById('prepListContainer').innerHTML = prepItems.map(item => `
+        <div class="sketch-card bg-white border-snow-200 rounded-2xl p-3 flex items-start gap-2.5 ${item.checked ? 'opacity-60' : ''}">
+          <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="togglePrepCheck('${item.id}')" class="mt-0.5 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
+          <div class="min-w-0 flex-1">
+            <p class="text-xs sm:text-sm font-bold text-ink-800 ${item.checked ? 'line-through text-ink-500' : ''}">${item.title}</p>
+            ${item.note ? `<p class="text-[11px] text-ink-500 mt-0.5">${item.note}</p>` : ''}
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            ${item.url ? `
+              <a href="${item.url}" target="_blank" rel="noopener noreferrer"
+                 class="px-2 py-1 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 text-[10px] font-extrabold inline-flex items-center gap-0.5 transition">
+                <span>前往 ↗</span>
+              </a>
+            ` : ''}
+            <button onclick="deletePrepItem('${item.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+          </div>
+        </div>
+      `).join('');
+
+      const notesList = tripState.importantNotes || [];
+      const notesContainer = document.getElementById('importantNotesListContainer');
+      if (notesContainer) {
+        notesContainer.innerHTML = notesList.map(n => `
+          <div id="note-card-${n.id}" class="sketch-card bg-white border ${n.borderStyle || 'border-snow-200'} rounded-2xl overflow-hidden">
+            <div onclick="toggleImportantNote('${n.id}')" class="p-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-snow-50 transition select-none">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="px-2 py-0.5 rounded-lg ${n.badgeStyle || 'bg-ice-600 text-white'} text-[10px] font-bold shrink-0">${n.badge || '備註'}</span>
+                <h4 class="text-xs sm:text-sm font-extrabold text-ink-800 truncate">${n.title}</h4>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                ${!n.isDefault ? `
+                  <button type="button" onclick="event.stopPropagation(); deleteImportantNote('${n.id}')" class="text-ice-500 hover:text-ice-700 p-1">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                ` : ''}
+                <i class="fa-solid ${n.expanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-xs text-ink-500 transition-transform"></i>
+              </div>
+            </div>
+            ${n.expanded ? `
+              <div class="px-3.5 pb-3.5 pt-1 border-t border-snow-100 space-y-1.5 text-xs text-ink-700 bg-snow-50/70 leading-relaxed">
+                ${(n.lines || []).map(line => `<div>${line}</div>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      }
+
+      const lugItems = tripState.luggageItems || [];
+      document.getElementById('luggageProgressText').textContent = `已打包 ${lugItems.filter(i => i.checked).length} / ${lugItems.length} 項`;
+      document.getElementById('luggageListContainer').innerHTML = lugItems.map(item => `
+        <div class="sketch-card bg-white border-snow-200 rounded-2xl p-3 flex items-start gap-2.5 ${item.checked ? 'opacity-60' : ''}">
+          <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleLuggageCheck('${item.id}')" class="mt-0.5 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
+          <div class="min-w-0 flex-1">
+            <p class="text-xs sm:text-sm font-bold text-ink-800 ${item.checked ? 'line-through text-ink-500' : ''}">${item.title}</p>
+            ${item.note ? `<p class="text-[11px] text-ink-500 mt-0.5">${item.note}</p>` : ''}
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            ${item.url ? `
+              <a href="${item.url}" target="_blank" rel="noopener noreferrer"
+                 class="px-2 py-1 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 text-[10px] font-extrabold inline-flex items-center gap-0.5 transition">
+                <span>前往 ↗</span>
+              </a>
+            ` : ''}
+            <button onclick="deleteLuggageItem('${item.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.toggleImportantNote = function(noteId) {
+      const note = (tripState.importantNotes || []).find(n => n.id === noteId);
+      if (!note) return;
+      note.expanded = !note.expanded;
+      syncStateEverywhere();
+      renderLuggageAndPrepSection();
+    };
+
+    window.openAddNoteModal = function() {
+      if (!isTravelerMode()) return;
+      document.getElementById('newNoteTitleInput').value = '';
+      document.getElementById('newNoteContentInput').value = '';
+      document.getElementById('addNoteModal').classList.remove('hidden');
+    };
+
+    window.closeAddNoteModal = () => document.getElementById('addNoteModal').classList.add('hidden');
+
+    window.saveNewImportantNote = function(e) {
+      e.preventDefault();
+      if (!isTravelerMode()) return;
+      const title = document.getElementById('newNoteTitleInput').value.trim();
+      const content = document.getElementById('newNoteContentInput').value.trim();
+      if (!title || !content) return;
+      if (!Array.isArray(tripState.importantNotes)) tripState.importantNotes = [];
+      const nextNum = tripState.importantNotes.length + 1;
+      const lines = content.split('\n').map(l => l.trim()).filter(Boolean).map(l => `• ${l}`);
+      tripState.importantNotes.push({
+        id: 'note-' + Date.now(),
+        badge: `備註 ${nextNum}`,
+        badgeStyle: 'bg-ice-600 text-white',
+        borderStyle: 'border-snow-200',
+        title,
+        lines,
+        expanded: true,
+        isDefault: false
+      });
+      closeAddNoteModal();
+      syncStateEverywhere();
+      renderLuggageAndPrepSection();
+      showToast('已新增備註！');
+    };
+
+    window.deleteImportantNote = function(noteId) {
+      if (!isTravelerMode()) return;
+      tripState.importantNotes = (tripState.importantNotes || []).filter(n => n.id !== noteId);
+      syncStateEverywhere();
+      renderLuggageAndPrepSection();
+    };
+
+    window.togglePrepCheck = (id) => { const i = tripState.prepItems.find(x => x.id === id); if (i) { i.checked = !i.checked; syncStateEverywhere(); renderLuggageAndPrepSection(); } };
+    window.deletePrepItem = (id) => { tripState.prepItems = tripState.prepItems.filter(x => x.id !== id); syncStateEverywhere(); renderLuggageAndPrepSection(); };
+    window.toggleLuggageCheck = (id) => { const i = tripState.luggageItems.find(x => x.id === id); if (i) { i.checked = !i.checked; syncStateEverywhere(); renderLuggageAndPrepSection(); } };
+    window.deleteLuggageItem = (id) => { tripState.luggageItems = tripState.luggageItems.filter(x => x.id !== id); syncStateEverywhere(); renderLuggageAndPrepSection(); };
+
+    window.openAddPrepModal = function() {
+      if (!isTravelerMode()) return;
+      document.getElementById('addCheckItemType').value = 'prep';
+      document.getElementById('addCheckItemModalTitle').textContent = '新增行前準備事項';
+      document.getElementById('checkItemTitleInput').value = '';
+      document.getElementById('checkItemNoteInput').value = '';
+      document.getElementById('checkItemUrlInput').value = '';
+      document.getElementById('addCheckItemModal').classList.remove('hidden');
+    };
+
+    window.openAddLuggageModal = function() {
+      if (!isTravelerMode()) return;
+      document.getElementById('addCheckItemType').value = 'luggage';
+      document.getElementById('addCheckItemModalTitle').textContent = '新增行李打包項目';
+      document.getElementById('checkItemTitleInput').value = '';
+      document.getElementById('checkItemNoteInput').value = '';
+      document.getElementById('checkItemUrlInput').value = '';
+      document.getElementById('addCheckItemModal').classList.remove('hidden');
+    };
+
+    window.closeAddCheckItemModal = () => document.getElementById('addCheckItemModal').classList.add('hidden');
+
+    window.saveNewCheckItem = function(e) {
+      e.preventDefault();
+      if (!isTravelerMode()) return;
+      const type = document.getElementById('addCheckItemType').value;
+      const title = document.getElementById('checkItemTitleInput').value.trim();
+      const note = document.getElementById('checkItemNoteInput').value.trim();
+      const url = document.getElementById('checkItemUrlInput').value.trim();
+      if (!title) return;
+      if (type === 'prep') {
+        tripState.prepItems.unshift({ id: 'prep-' + Date.now(), title, note, url, checked: false });
+      } else {
+        tripState.luggageItems.unshift({ id: 'lug-' + Date.now(), title, note, url, checked: false });
+      }
+      closeAddCheckItemModal();
+      syncStateEverywhere();
+      renderLuggageAndPrepSection();
+      showToast('已新增項目！');
+    };
+
+    // -------------------- NOTIFICATIONS & UTILS --------------------
+    window.openNotificationsModal = function() {
+      hasUnreadNotifs = false;
+      const myNotifs = getMyVisibleNotifications();
+      if (myNotifs.length > 0) { lastSeenNotifId = myNotifs[0].id; localStorage.setItem(SEEN_NOTIF_KEY, lastSeenNotifId); }
+      renderHeaderAndNav();
+      document.getElementById('notificationsListContainer').innerHTML = myNotifs.length === 0
+        ? `<p class="text-xs text-ink-500 text-center py-6">目前還沒有通知</p>`
+        : myNotifs.map(n => `
+          <div onclick="closeNotificationsModal(); switchMainTab('${n.targetTab || 'itinerary'}')" class="p-3 rounded-2xl bg-snow-50 border border-snow-200 cursor-pointer">
+            <div class="flex justify-between"><p class="text-xs font-bold text-ink-800">${n.title}</p><span class="text-[10px] text-ink-500">${n.time}</span></div>
+            <p class="text-[11px] text-ink-600 mt-1">${n.detail}</p>
+          </div>
+        `).join('');
+      document.getElementById('notificationsModal').classList.remove('hidden');
+    };
+    window.closeNotificationsModal = () => document.getElementById('notificationsModal').classList.add('hidden');
+
+    function compressImageFile(file, maxWidth, quality, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          callback(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    window.openLightboxSrc = (src, caption) => {
+      activeAlbumPhotos = [];
+      activeLightboxRefContext = null;
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightboxCaption').textContent = caption || '';
+      document.getElementById('lightboxCounter').classList.add('hidden');
+      document.getElementById('lightboxProgressDots').classList.add('hidden');
+      document.getElementById('lightboxPrevBtn').classList.add('hidden');
+      document.getElementById('lightboxNextBtn').classList.add('hidden');
+      document.getElementById('lightboxPrivacyToggleBtn').classList.add('hidden');
+      document.getElementById('lightboxDeleteBtn').classList.add('hidden');
+      document.getElementById('lightboxHintText').textContent = '點擊右上角關閉';
+      document.getElementById('lightboxModal').classList.remove('hidden');
+    };
+    window.closeLightbox = () => {
+      activeAlbumPhotos = [];
+      activeLightboxRefContext = null;
+      document.getElementById('lightboxModal').classList.add('hidden');
+    };
+
+    function getCurrentTimeStr() {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+
+    let toastTimer = null;
+    function showToast(message, iconClass = 'fa-circle-check', colorClass = 'text-emerald-400') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMessage').textContent = message;
+      document.getElementById('toastIcon').className = `fa-solid ${iconClass} ${colorClass}`;
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-2');
+      }, 2800);
+    }
+
+    // -------------------- BOOTSTRAP --------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      initPwaBannerAndManifest();
+      initLightboxTouchSwipe();
+      renderAll();
+      initFirebaseSync();
+      initVisitorSessionTracking();
+      if (!userIdentity.configured) {
+        setTimeout(() => { openIdentityModal(); }, 250);
+      } else if (isFamilyMode()) {
+        activeSessionStartMs = Date.now();
+      }
+    });
+  </script>
+</body>
+</html>
+
