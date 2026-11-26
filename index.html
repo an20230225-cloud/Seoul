@@ -4089,23 +4089,28 @@ const lugItems = tripState.luggageItems || [];
       e.preventDefault();
       if (!isTravelerMode()) return;
       const type = document.getElementById('addCheckItemType').value;
-      const editId = document.getElementById('editCheckItemId').value;
+      const editId = document.getElementById('editCheckItemId') ? document.getElementById('editCheckItemId').value : '';
       const title = document.getElementById('checkItemTitleInput').value.trim();
       const note = document.getElementById('checkItemNoteInput').value.trim();
       const url = document.getElementById('checkItemUrlInput').value.trim();
       if (!title) return;
-      const editId = document.getElementById('editCheckItemId') ? document.getElementById('editCheckItemId').value : '';
-      if (type === 'prep' && editId) {
-        const target = (tripState.prepItems || []).find(x => x.id === editId);
-        if (target) Object.assign(target, { title, note, url });
-      } else if (type === 'prep') {
-        tripState.prepItems.unshift({ id: 'prep-' + Date.now(), title, note, url, checked: false });
-      } else if (editId) {
-        const target = (tripState.luggageItems || []).find(x => x.id === editId);
-        if (target) Object.assign(target, { title, note, url });
+
+      if (type === 'prep') {
+        if (editId) {
+          const target = (tripState.prepItems || []).find(x => x.id === editId);
+          if (target) Object.assign(target, { title, note, url });
+        } else {
+          tripState.prepItems.unshift({ id: 'prep-' + Date.now(), title, note, url, checked: false });
+        }
       } else {
-        tripState.luggageItems.unshift({ id: 'lug-' + Date.now(), title, note, url, checked: false });
+        if (editId) {
+          const target = (tripState.luggageItems || []).find(x => x.id === editId);
+          if (target) Object.assign(target, { title, note, url });
+        } else {
+          tripState.luggageItems.unshift({ id: 'lug-' + Date.now(), title, note, url, checked: false });
+        }
       }
+
       closeAddCheckItemModal();
       syncStateEverywhere();
       renderLuggageAndPrepSection();
