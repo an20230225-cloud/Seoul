@@ -754,10 +754,7 @@
               <input type="checkbox" value="daiso" checked class="wish-store-cb accent-ice-600" /> 🏠 大創
             </label>
             <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-snow-50 border border-snow-300 text-xs font-bold text-ink-800 cursor-pointer">
-              <input type="checkbox" value="oliveyoung" class="wish-store-cb accent-ice-600" /> 💄 Olive Young
-            </label>
-            <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-snow-50 border border-snow-300 text-xs font-bold text-ink-800 cursor-pointer">
-              <input type="checkbox" value="pharmacy" class="wish-store-cb accent-ice-600" /> 💊 藥局
+              <input type="checkbox" value="oliveyoung" class="wish-store-cb accent-ice-600" /> 💊 藥局/Olive Young
             </label>
             <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-snow-50 border border-snow-300 text-xs font-bold text-ink-800 cursor-pointer">
               <input type="checkbox" value="other" class="wish-store-cb accent-ice-600" /> 🛍️ 其他/零食
@@ -813,8 +810,7 @@
           <label class="block text-xs font-bold text-ink-700 mb-1">採購通路 *</label>
           <select id="shopStoreInput" class="w-full px-3 py-2.5 rounded-xl border border-snow-300 bg-snow-50 text-xs sm:text-sm font-bold text-ink-800">
             <option value="daiso">🏠 大創 Daiso</option>
-            <option value="oliveyoung">💄 Olive Young</option>
-            <option value="pharmacy">💊 藥局</option>
+            <option value="oliveyoung">💊 藥局/Olive Young</option>
             <option value="other">🛍️ 其他 / 零食</option>
           </select>
         </div>
@@ -1125,15 +1121,13 @@
 
     const STORES_META = [
       { id: 'daiso', label: '大創 Daiso', icon: '🏠' },
-      { id: 'oliveyoung', label: 'Olive Young', icon: '💄' },
-      { id: 'pharmacy', label: '藥局', icon: '💊' },
+      { id: '藥局/Olive Young', label: '藥局/Olive Young', icon: '💊' },
       { id: 'other', label: '其他/零食', icon: '🛍️' }
     ];
 
     const STORE_LABEL_MAP = {
       daiso: '🏠 大創 Daiso',
-      oliveyoung: '💄 Olive Young',
-      pharmacy: '💊 藥局',
+      oliveyoung: '💊 藥局/Olive Young',
       other: '🛍️ 其他/零食'
     };
 
@@ -3589,7 +3583,13 @@
         </button>
       `).join('');
 
-      const storeItems = tripState.shoppingItems.filter(item => item.store === currentStoreFilter);
+            const storeItems = tripState.shoppingItems.filter(item => {
+        if (currentStoreFilter === 'oliveyoung') {
+          return item.store === 'oliveyoung' || item.store === 'pharmacy';
+        }
+        return item.store === currentStoreFilter;
+      });
+
       const sortedItems = [...storeItems.filter(i => !i.bought), ...storeItems.filter(i => i.bought)];
     const listEl = document.getElementById('shoppingListContainer');
       listEl.innerHTML = '';
