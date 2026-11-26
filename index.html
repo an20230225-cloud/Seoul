@@ -1930,10 +1930,24 @@
                 </p>
               </div>
             </div>
+            <button type="button" onclick="deleteVisitorLog('${encodeURIComponent(v.name)}')" title="刪除訪客紀錄"
+                    class="w-8 h-8 rounded-xl text-ice-500 hover:bg-snow-100 hover:text-ice-700 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
           </div>
         `;
       }).join('');
     }
+
+    window.deleteVisitorLog = function(encodedName) {
+      if (!isSuperAdmin()) return;
+      const targetName = decodeURIComponent(encodedName || '');
+      if (!targetName || !tripState.visitorsLog) return;
+      delete tripState.visitorsLog[targetName];
+      syncStateEverywhere();
+      renderAdminConsoleContent();
+      showToast(`已刪除「${targetName}」的訪客紀錄`);
+    };
 
     // -------------------- NAVIGATION & RENDER --------------------
     window.switchMainTab = function(tabName) {
@@ -2360,7 +2374,6 @@
                     ` : ''}
                     <h3 class="text-sm sm:text-base font-extrabold ${item.completed ? 'text-ink-500 line-through' : 'text-ink-800'} leading-snug">
                       ${item.title}
-                      ${item.adjusted ? '<span class="ml-1 align-middle text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-snow-100 border border-snow-300 text-ice-700">已調整</span>' : ''}
                     </h3>
                   </div>
                   <div class="flex items-center gap-1 shrink-0">
@@ -3602,10 +3615,10 @@
       syncStateEverywhere();
       renderAll();
     };
-        function updateBottomFamilyWishlistBar() {
+      function updateBottomFamilyWishlistBar() {
       const bar = document.getElementById('familyWishlistBar');
       if (!bar) return;
-      if (isFamilyMode() && !isCloudReadOnlyMode && userIdentity.configured) {
+      if (activeMainTab === 'shopping' && isFamilyMode() && !isCloudReadOnlyMode && userIdentity.configured) {
         const myName = userIdentity.nickname || '家人';
         let totalQty = 0;
         (tripState.shoppingItems || []).forEach(item => {
@@ -3899,7 +3912,7 @@
       const prepItems = tripState.prepItems || [];
       document.getElementById('prepProgressText').textContent = `已完成 ${prepItems.filter(i => i.checked).length} / ${prepItems.length} 項`;
       document.getElementById('prepListContainer').innerHTML = prepItems.map(item => `
-        <div class="sketch-card bg-white border-snow-200 rounded-2xl p-3 flex items-start gap-2.5 ${item.checked ? 'opacity-60' : ''}">
+      <div class="sketch-card bg-white border-snow-200 rounded-2xl p-3 flex items-start gap-2.5 ${item.checked ? 'opacity-60' : ''}">
           <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="togglePrepCheck('${item.id}')" class="mt-0.5 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
           <div class="min-w-0 flex-1">
             <p class="text-xs sm:text-sm font-bold text-ink-800 ${item.checked ? 'line-through text-ink-500' : ''}">${item.title}</p>
@@ -3912,8 +3925,10 @@
                 <span>前往 ↗</span>
               </a>
             ` : ''}
+            <button type="button" onclick="openEditPrepModal('${item.id}')" title="編輯" class="text-ink-500 hover:text-ice-700 p-1"><i class="fa-solid fa-pen text-xs"></i></button>
             <button onclick="deletePrepItem('${item.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
           </div>
+        </div>
         </div>
       `).join('');
 
@@ -4032,20 +4047,26 @@ const lugItems = tripState.luggageItems || [];
     window.openAddPrepModal = function() {
       if (!isTravelerMode()) return;
       document.getElementById('addCheckItemType').value = 'prep';
+      const editIdEl = document.getElementById('editCheckItemId');
+      if (editIdEl) editIdEl.value = '';
       document.getElementById('addCheckItemModalTitle').textContent = '新增行前準備事項';
       document.getElementById('checkItemTitleInput').value = '';
       document.getElementById('checkItemNoteInput').value = '';
       document.getElementById('checkItemUrlInput').value = '';
       document.getElementById('addCheckItemModal').classList.remove('hidden');
     };
-window.openAddLuggageModal = function() {
+
+    window.openEditPrepModal = function(itemId) {
       if (!isTravelerMode()) return;
-      document.getElementById('addCheckItemType').value = 'luggage';
-      document.getElementById('editCheckItemId').value = '';
-      document.getElementById('addCheckItemModalTitle').textContent = '新增行李打包項目';
-      document.getElementById('checkItemTitleInput').value = '';
-      document.getElementById('checkItemNoteInput').value = '';
-      document.getElementById('checkItemUrlInput').value = '';
+      const target = (tripState.prepItems || []).find(x => x.id === itemId);
+      if (!target) return;
+      document.getElementById('addCheckItemType').value = 'prep';
+      const editIdEl = document.getElementById('editCheckItemId');
+      if (editIdEl) editIdEl.value = target.id;
+      document.getElementById('addCheckItemModalTitle').textContent = '編輯行前準備事項';
+      document.getElementById('checkItemTitleInput').value = target.title || '';
+      document.getElementById('checkItemNoteInput').value = target.note || '';
+      document.getElementById('checkItemUrlInput').value = target.url || '';
       document.getElementById('addCheckItemModal').classList.remove('hidden');
     };
 
@@ -4073,7 +4094,11 @@ window.openAddLuggageModal = function() {
       const note = document.getElementById('checkItemNoteInput').value.trim();
       const url = document.getElementById('checkItemUrlInput').value.trim();
       if (!title) return;
-      if (type === 'prep') {
+      const editId = document.getElementById('editCheckItemId') ? document.getElementById('editCheckItemId').value : '';
+      if (type === 'prep' && editId) {
+        const target = (tripState.prepItems || []).find(x => x.id === editId);
+        if (target) Object.assign(target, { title, note, url });
+      } else if (type === 'prep') {
         tripState.prepItems.unshift({ id: 'prep-' + Date.now(), title, note, url, checked: false });
       } else if (editId) {
         const target = (tripState.luggageItems || []).find(x => x.id === editId);
