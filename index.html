@@ -800,7 +800,6 @@
             <option value="other">🛍️ 其他 / 零食</option>
           </select>
         </div>
-        </div>
         <div class="grid grid-cols-[1fr_92px] gap-2.5">
           <div>
             <label class="block text-xs font-bold text-ink-700 mb-1">商品名稱 *</label>
@@ -1408,6 +1407,8 @@
     let currentUser = null;
     let sharedDocRef = null;
     let photosColRef = null;
+    let shopPhotosColRef = null;
+    let cloudShopPhotosMap = {};
     let isCloudReadOnlyMode = false;
 
     let selectedTravelerName = '小吉郎';
@@ -1649,8 +1650,8 @@
 
        sharedDocRef = doc(db, 'seoul_trip_2026', 'main_board');
         photosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'photos');
-        const shopPhotosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'shop_photos');
-        let cloudShopPhotosMap = {};
+        shopPhotosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'shop_photos');
+        cloudShopPhotosMap = {};
 
         onSnapshot(shopPhotosColRef, (snap) => {
           const nextMap = {};
@@ -2614,7 +2615,6 @@
       const item = tripState.items.find(i => i.id === itemId);
       if (!item || item.day <= 1) return;
       item.day -= 1;
-      item.adjusted = true;
       currentDay = item.day;
       syncStateEverywhere();
       renderAll();
@@ -2806,7 +2806,6 @@
       }
       item.day = targetDay;
       item.time = newTime;
-      item.adjusted = true;
       currentDay = targetDay;
       closePostponeModal();
       syncStateEverywhere();
@@ -3566,7 +3565,7 @@
                 <p class="text-xs font-bold text-ink-800 leading-snug break-words ${item.bought ? 'line-through text-ink-500' : ''}">${item.name}</p>
               </div>
               ${cleanedNote ? `<p class="text-[11px] text-ink-600 leading-snug break-words">${cleanedNote}</p>` : ''}
-              ${item.photoDataUrl ? `<img src="${item.photoDataUrl}" onclick="openLightboxSrc('${item.photoDataUrl}', '${item.name}')" class="w-full h-24 rounded-xl object-cover border border-snow-200 cursor-pointer" />` : ''}
+             ${getEffectiveItemPhoto(item) ? `<img src="${getEffectiveItemPhoto(item)}" onclick="openLightboxSrc('${getEffectiveItemPhoto(item)}', '${item.name}')" class="w-full h-24 rounded-xl object-cover border border-snow-200 cursor-pointer" />` : ''}
             </div>
             ${!item.bought && !isCloudReadOnlyMode ? `
               <div class="pt-1 flex items-center gap-1.5">
@@ -3587,7 +3586,7 @@
               <p class="text-xs sm:text-sm font-bold text-ink-800 leading-snug ${item.bought ? 'line-through text-ink-500' : ''}">${item.name}</p>
               ${metaParts.length > 0 ? `<p class="text-[11px] text-ink-600 mt-0.5">${metaParts.join(' ・ ')}</p>` : ''}
             </div>
-            ${item.photoDataUrl ? `<img src="${item.photoDataUrl}" onclick="openLightboxSrc('${item.photoDataUrl}', '${item.name}')" class="w-16 h-12 rounded-xl object-cover border border-snow-200 shrink-0 cursor-pointer" />` : ''}
+            ${getEffectiveItemPhoto(item) ? `<img src="${getEffectiveItemPhoto(item)}" onclick="openLightboxSrc('${getEffectiveItemPhoto(item)}', '${item.name}')" class="w-full h-24 rounded-xl object-cover border border-snow-200 cursor-pointer" />` : ''}
             <div class="flex items-center gap-0.5 shrink-0">
               <button type="button" onclick="openEditShoppingModal('${item.id}')" title="修改商品" class="text-ink-500 hover:text-ice-700 p-1">
                 <i class="fa-solid fa-pen text-xs"></i>
@@ -3928,7 +3927,6 @@
             <button type="button" onclick="openEditPrepModal('${item.id}')" title="編輯" class="text-ink-500 hover:text-ice-700 p-1"><i class="fa-solid fa-pen text-xs"></i></button>
             <button onclick="deletePrepItem('${item.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
           </div>
-        </div>
         </div>
       `).join('');
 
