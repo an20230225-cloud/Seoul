@@ -49,6 +49,24 @@
       border-width: 1.5px;
       box-shadow: 0 3px 0 rgba(74, 124, 155, 0.14);
     }
+    .drag-handle {
+      touch-action: none;
+      cursor: grab;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    .shopping-dragging {
+      opacity: 0.92;
+      transform: scale(1.02);
+      box-shadow: 0 10px 24px rgba(37, 74, 99, 0.22);
+      z-index: 25;
+      position: relative;
+      border-color: #356280 !important;
+    }
+    .shopping-drag-over {
+      border-top: 3px solid #356280 !important;
+    }
   </style>
 </head>
 <body class="min-h-screen pb-24 selection:bg-ice-600 selection:text-white">
@@ -3631,14 +3649,26 @@
           const metaParts = [];
           if (cleanedNote) metaParts.push(cleanedNote);
           if (breakdownStr) metaParts.push(`<span class="font-bold text-ink-800">${breakdownStr}</span>`);
-          row.className = `sketch-card bg-white rounded-2xl p-3 border transition-all flex items-start gap-2.5 ${item.bought ? 'border-snow-200 bg-snow-100/60 opacity-60' : 'border-snow-200'}`;
+          const photoSrc = getEffectiveItemPhoto(item);
+          const thumbHtml = photoSrc
+            ? `<img src="${photoSrc}" alt="${item.name}" onclick="openLightboxSrc('${photoSrc}', '${item.name}')" class="w-14 h-14 rounded-xl object-cover border border-snow-200 shrink-0 cursor-pointer bg-snow-50" />`
+            : '';
+
+          row.dataset.shopId = item.id;
+          row.className = `shopping-card sketch-card bg-white rounded-2xl p-3 border transition-all flex items-center gap-2 ${item.bought ? 'border-snow-200 bg-snow-100/60 opacity-60' : 'border-snow-200'}`;
           row.innerHTML = `
-            <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShoppingBought('${item.id}')" class="mt-1 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
+            ${!item.bought && !isCloudReadOnlyMode ? `
+              <button type="button" data-drag-id="${item.id}" title="按住上下移動排序" aria-label="上下移動排序"
+                      class="drag-handle w-6 h-10 rounded-lg text-ink-500 hover:text-ice-700 hover:bg-snow-100 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-grip-lines text-xs"></i>
+              </button>
+            ` : '<span class="w-2 shrink-0"></span>'}
+            <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShoppingBought('${item.id}')" class="w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
             <div class="min-w-0 flex-1">
-              <p class="text-xs sm:text-sm font-bold text-ink-800 leading-snug ${item.bought ? 'line-through text-ink-500' : ''}">${item.name}</p>
-              ${metaParts.length > 0 ? `<p class="text-[11px] text-ink-600 mt-0.5">${metaParts.join(' ・ ')}</p>` : ''}
+              <p class="text-xs sm:text-sm font-bold text-ink-800 leading-snug break-words ${item.bought ? 'line-through text-ink-500' : ''}">${item.name}</p>
+              ${metaParts.length > 0 ? `<p class="text-[11px] text-ink-600 mt-0.5 break-words">${metaParts.join(' ・ ')}</p>` : ''}
             </div>
-            ${getEffectiveItemPhoto(item) ? `<img src="${getEffectiveItemPhoto(item)}" onclick="openLightboxSrc('${getEffectiveItemPhoto(item)}', '${item.name}')" class="w-full h-24 rounded-xl object-cover border border-snow-200 cursor-pointer" />` : ''}
+            ${thumbHtml}
             <div class="flex items-center gap-0.5 shrink-0">
               <button type="button" onclick="openEditShoppingModal('${item.id}')" title="修改商品" class="text-ink-500 hover:text-ice-700 p-1">
                 <i class="fa-solid fa-pen text-xs"></i>
@@ -3650,9 +3680,80 @@
           `;
         }
         listEl.appendChild(row);
+      });
+
+      if (isTravelerMode()) {
+        bindShoppingDragHandlers(listEl);
+      }
       }); 
     }
+let activeDragShopId = null;
 
+    function bindShoppingDragHandlers(containerEl) {
+      if (!containerEl || !isTravelerMode() || isCloudReadOnlyMode) return;
+
+      containerEl.querySelectorAll('.drag-handle').forEach(handle => {
+        handle.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          const sourceId = handle.dataset.dragId;
+          const sourceCard = containerEl.querySelector(`.shopping-card[data-shop-id="${sourceId}"]`);
+          if (!sourceId || !sourceCard) return;
+
+          activeDragShopId = sourceId;
+          handle.setPointerCapture(e.pointerId);
+          sourceCard.classList.add('shopping-dragging');
+
+          let targetCard = null;
+
+          const onMove = (moveEvent) => {
+            const elAtPoint = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+            const candidate = elAtPoint ? elAtPoint.closest('.shopping-card') : null;
+
+            containerEl.querySelectorAll('.shopping-drag-over').forEach(el => el.classList.remove('shopping-drag-over'));
+            if (candidate && candidate !== sourceCard && !candidate.classList.contains('opacity-60')) {
+              targetCard = candidate;
+              targetCard.classList.add('shopping-drag-over');
+            } else {
+              targetCard = null;
+            }
+          };
+
+          const onEnd = () => {
+            handle.removeEventListener('pointermove', onMove);
+            handle.removeEventListener('pointerup', onEnd);
+            handle.removeEventListener('pointercancel', onEnd);
+
+            sourceCard.classList.remove('shopping-dragging');
+            containerEl.querySelectorAll('.shopping-drag-over').forEach(el => el.classList.remove('shopping-drag-over'));
+
+            const dropTargetId = targetCard ? targetCard.dataset.shopId : null;
+            activeDragShopId = null;
+
+            if (dropTargetId && dropTargetId !== sourceId) {
+              reorderShoppingItems(sourceId, dropTargetId);
+            }
+          };
+
+          handle.addEventListener('pointermove', onMove);
+          handle.addEventListener('pointerup', onEnd);
+          handle.addEventListener('pointercancel', onEnd);
+        });
+      });
+    }
+
+    function reorderShoppingItems(sourceId, targetId) {
+      const list = tripState.shoppingItems || [];
+      const fromIdx = list.findIndex(item => item.id === sourceId);
+      const toIdx = list.findIndex(item => item.id === targetId);
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+
+      const [moved] = list.splice(fromIdx, 1);
+      list.splice(toIdx, 0, moved);
+
+      syncStateEverywhere();
+      renderShoppingSection();
+      showToast('已更新購物清單順序');
+    }
     window.setStoreFilter = (id) => { currentStoreFilter = id; renderShoppingSection(); };
     window.familyTogglePlusOne = function(itemId, delta) {
       if (isCloudReadOnlyMode) return;
