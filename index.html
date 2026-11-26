@@ -3684,8 +3684,7 @@
 
       if (isTravelerMode()) {
         bindShoppingDragHandlers(listEl);
-      }
-      }); 
+      } 
     }
 let activeDragShopId = null;
 
@@ -4209,6 +4208,18 @@ const lugItems = tripState.luggageItems || [];
       const editIdEl = document.getElementById('editCheckItemId');
       if (editIdEl) editIdEl.value = '';
       document.getElementById('addCheckItemModalTitle').textContent = '新增行前準備事項';
+      document.getElementById('checkItemTitleInput').value = '';
+      document.getElementById('checkItemNoteInput').value = '';
+      document.getElementById('checkItemUrlInput').value = '';
+      document.getElementById('addCheckItemModal').classList.remove('hidden');
+    };
+
+    window.openAddLuggageModal = function() {
+      if (!isTravelerMode()) return;
+      document.getElementById('addCheckItemType').value = 'luggage';
+      const editIdEl = document.getElementById('editCheckItemId');
+      if (editIdEl) editIdEl.value = '';
+      document.getElementById('addCheckItemModalTitle').textContent = '新增行李打包項目';
       document.getElementById('checkItemTitleInput').value = '';
       document.getElementById('checkItemNoteInput').value = '';
       document.getElementById('checkItemUrlInput').value = '';
