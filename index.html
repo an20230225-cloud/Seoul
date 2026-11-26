@@ -791,23 +791,15 @@
       </div>
       <form onsubmit="saveNewShoppingItem(event)" class="p-5 overflow-y-auto space-y-3.5">
         <input type="hidden" id="shopEditIdInput" value="" />
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-ink-700 mb-1">採購通路 *</label>
-            <select id="shopStoreInput" class="w-full px-3 py-2.5 rounded-xl border border-snow-300 bg-snow-50 text-xs sm:text-sm font-bold text-ink-800">
-              <option value="daiso">🏠 大創 Daiso</option>
-              <option value="oliveyoung">💄 Olive Young</option>
-              <option value="pharmacy">💊 藥局</option>
-              <option value="other">🛍️ 其他 / 零食</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-ink-700 mb-1">優先標籤</label>
-            <select id="shopPriorityInput" class="w-full px-3 py-2.5 rounded-xl border border-snow-300 bg-snow-50 text-xs sm:text-sm font-bold text-ink-800">
-              <option value="必買">‼️ 必買</option>
-              <option value="考慮">💭 考慮</option>
-            </select>
-          </div>
+        <div>
+          <label class="block text-xs font-bold text-ink-700 mb-1">採購通路 *</label>
+          <select id="shopStoreInput" class="w-full px-3 py-2.5 rounded-xl border border-snow-300 bg-snow-50 text-xs sm:text-sm font-bold text-ink-800">
+            <option value="daiso">🏠 大創 Daiso</option>
+            <option value="oliveyoung">💄 Olive Young</option>
+            <option value="pharmacy">💊 藥局</option>
+            <option value="other">🛍️ 其他 / 零食</option>
+          </select>
+        </div>
         </div>
         <div class="grid grid-cols-[1fr_92px] gap-2.5">
           <div>
@@ -916,6 +908,7 @@
       </div>
       <form onsubmit="saveNewCheckItem(event)" class="p-5 space-y-3.5">
         <input type="hidden" id="addCheckItemType" value="prep" />
+        <input type="hidden" id="editCheckItemId" value="" />
         <div>
           <label class="block text-xs font-bold text-ink-700 mb-1">項目名稱 *</label>
           <input type="text" id="checkItemTitleInput" required placeholder="例如：e-arrival 電子入境卡" class="w-full px-3 py-2.5 rounded-xl border border-snow-300 bg-snow-50 text-sm text-ink-800" />
@@ -1654,8 +1647,22 @@
           // 若未開啟匿名登入，仍嘗試直接以公開規則讀取 Firestore
         }
 
-        sharedDocRef = doc(db, 'seoul_trip_2026', 'main_board');
+       sharedDocRef = doc(db, 'seoul_trip_2026', 'main_board');
         photosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'photos');
+        const shopPhotosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'shop_photos');
+        let cloudShopPhotosMap = {};
+
+        onSnapshot(shopPhotosColRef, (snap) => {
+          const nextMap = {};
+          snap.forEach(d => {
+            const val = d.data() || {};
+            if (val.photoDataUrl) nextMap[d.id] = val.photoDataUrl;
+          });
+          cloudShopPhotosMap = nextMap;
+          if (activeMainTab === 'shopping') {
+            shoppingSubMode === 'official' ? renderShoppingSection() : renderWishpoolSection();
+          }
+        });
 
         // 監聽主看板資料
         onSnapshot(sharedDocRef, (snapshot) => {
@@ -1712,8 +1719,19 @@
       if (!sharedDocRef || isCloudReadOnlyMode) return;
       try {
         // 主文件不塞入大量相簿照片，確保永遠遠低於 1MB 上限
+        const slimShoppingItems = (tripState.shoppingItems || []).map(item => {
+          const { photoDataUrl, ...rest } = item;
+          return { ...rest, photoDataUrl: photoDataUrl ? '__IN_SUBCOLLECTION__' : '' };
+        });
+        const slimWishpoolItems = (tripState.wishpoolItems || []).map(wish => {
+          const { photoDataUrl, ...rest } = wish;
+          return { ...rest, photoDataUrl: photoDataUrl ? '__IN_SUBCOLLECTION__' : '' };
+        });
+
         const payloadToSync = {
           ...tripState,
+          shoppingItems: slimShoppingItems,
+          wishpoolItems: slimWishpoolItems,
           diaries: [],
           notifications: (tripState.notifications || []).slice(0, 30),
           updatedAt: Date.now()
@@ -3491,10 +3509,11 @@
 
       const storeItems = tripState.shoppingItems.filter(item => item.store === currentStoreFilter);
       const sortedItems = [...storeItems.filter(i => !i.bought), ...storeItems.filter(i => i.bought)];
-      const listEl = document.getElementById('shoppingListContainer');
+    const listEl = document.getElementById('shoppingListContainer');
       listEl.innerHTML = '';
 
       if (sortedItems.length === 0) {
+        listEl.className = 'space-y-2.5';
         listEl.innerHTML = `
           <div class="sketch-card bg-white border-dashed border-snow-300 rounded-3xl p-7 text-center flex flex-col items-center">
             <svg width="72" height="72" viewBox="0 0 72 72" fill="none" class="mb-2">
@@ -3509,6 +3528,8 @@
         return;
       }
 
+      listEl.className = isFamilyMode() ? 'grid grid-cols-2 gap-2.5 items-stretch' : 'space-y-2.5';
+
       sortedItems.forEach(item => {
         const requests = item.requests || {};
         const reqEntries = Object.entries(requests).filter(([, qty]) => qty > 0);
@@ -3520,37 +3541,40 @@
 
         const myName = userIdentity.nickname || '家人';
         const myCurrentQty = requests[myName] || 0;
-        const priorityBadge = item.priority === '考慮'
-          ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-snow-100 border border-snow-300 text-ink-700 shrink-0">💭 考慮</span>'
-          : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-ice-600 text-white shrink-0">‼️ 必買</span>';
-
         const cleanedNote = cleanRedundantPriorityText(item.note);
-        const metaParts = [];
-        if (cleanedNote) metaParts.push(cleanedNote);
-        if (isTravelerMode() && breakdownStr) metaParts.push(`<span class="font-bold text-ink-800">${breakdownStr}</span>`);
 
         const row = document.createElement('div');
-        row.className = `sketch-card bg-white rounded-2xl p-3 border transition-all flex items-start gap-2.5 ${item.bought ? 'border-snow-200 bg-snow-100/60 opacity-60' : 'border-snow-200'}`;
-        row.innerHTML = `
-          ${isTravelerMode()
-            ? `<input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShoppingBought('${item.id}')" class="mt-1 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />`
-            : `<span class="mt-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] shrink-0 ${item.bought ? 'bg-snow-200 text-ice-700' : 'bg-snow-100 text-ice-600'}">${item.bought ? '✓' : '•'}</span>`}
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              ${priorityBadge}
-              <p class="text-xs sm:text-sm font-bold text-ink-800 leading-snug ${item.bought ? 'line-through text-ink-500' : ''}">${item.name}</p>
+        if (isFamilyMode()) {
+          row.className = `sketch-card bg-white rounded-2xl p-2.5 border transition-all flex flex-col justify-between gap-2 min-w-0 ${item.bought ? 'border-snow-200 bg-snow-100/60 opacity-60' : 'border-snow-200'}`;
+          row.innerHTML = `
+            <div class="space-y-1.5 min-w-0">
+              <div class="flex items-start gap-1.5 min-w-0">
+                <span class="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] shrink-0 ${item.bought ? 'bg-snow-200 text-ice-700' : 'bg-snow-100 text-ice-600'}">${item.bought ? '✓' : '•'}</span>
+                <p class="text-xs font-bold text-ink-800 leading-snug break-words ${item.bought ? 'line-through text-ink-500' : ''}">${item.name}</p>
+              </div>
+              ${cleanedNote ? `<p class="text-[11px] text-ink-600 leading-snug break-words">${cleanedNote}</p>` : ''}
+              ${item.photoDataUrl ? `<img src="${item.photoDataUrl}" onclick="openLightboxSrc('${item.photoDataUrl}', '${item.name}')" class="w-full h-24 rounded-xl object-cover border border-snow-200 cursor-pointer" />` : ''}
             </div>
-            ${metaParts.length > 0 ? `<p class="text-[11px] text-ink-600 mt-0.5">${metaParts.join(' ・ ')}</p>` : ''}
-            ${isFamilyMode() && !item.bought && !isCloudReadOnlyMode ? `
-              <div class="mt-1.5 flex items-center gap-1.5">
+            ${!item.bought && !isCloudReadOnlyMode ? `
+              <div class="pt-1 flex items-center gap-1.5">
                 ${myCurrentQty === 0
-                  ? `<button onclick="familyTogglePlusOne('${item.id}', 1)" class="px-2.5 py-1 rounded-lg bg-ice-500 text-white text-[11px] font-bold active:scale-95">+1</button>`
+                  ? `<button onclick="familyTogglePlusOne('${item.id}', 1)" class="px-3 py-1 rounded-lg bg-ice-500 text-white text-xs font-extrabold active:scale-95">+1</button>`
                   : `<div class="inline-flex items-center gap-1.5 bg-snow-100 border border-snow-300 rounded-lg px-2 py-0.5"><span class="text-[11px] font-bold text-ice-700">已選 ${myCurrentQty}</span><button onclick="familyTogglePlusOne('${item.id}', -1)" class="w-5 h-5 rounded bg-white text-ice-700 font-bold text-xs">-</button><button onclick="familyTogglePlusOne('${item.id}', 1)" class="w-5 h-5 rounded bg-ice-600 text-white font-bold text-xs">+</button></div>`}
               </div>
             ` : ''}
-          </div>
-                    ${item.photoDataUrl ? `<img src="${item.photoDataUrl}" onclick="openLightboxSrc('${item.photoDataUrl}', '${item.name}')" class="w-16 h-12 rounded-xl object-cover border border-snow-200 shrink-0 cursor-pointer" />` : ''}
-          ${isTravelerMode() ? `
+          `;
+        } else {
+          const metaParts = [];
+          if (cleanedNote) metaParts.push(cleanedNote);
+          if (breakdownStr) metaParts.push(`<span class="font-bold text-ink-800">${breakdownStr}</span>`);
+          row.className = `sketch-card bg-white rounded-2xl p-3 border transition-all flex items-start gap-2.5 ${item.bought ? 'border-snow-200 bg-snow-100/60 opacity-60' : 'border-snow-200'}`;
+          row.innerHTML = `
+            <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShoppingBought('${item.id}')" class="mt-1 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
+            <div class="min-w-0 flex-1">
+              <p class="text-xs sm:text-sm font-bold text-ink-800 leading-snug ${item.bought ? 'line-through text-ink-500' : ''}">${item.name}</p>
+              ${metaParts.length > 0 ? `<p class="text-[11px] text-ink-600 mt-0.5">${metaParts.join(' ・ ')}</p>` : ''}
+            </div>
+            ${item.photoDataUrl ? `<img src="${item.photoDataUrl}" onclick="openLightboxSrc('${item.photoDataUrl}', '${item.name}')" class="w-16 h-12 rounded-xl object-cover border border-snow-200 shrink-0 cursor-pointer" />` : ''}
             <div class="flex items-center gap-0.5 shrink-0">
               <button type="button" onclick="openEditShoppingModal('${item.id}')" title="修改商品" class="text-ink-500 hover:text-ice-700 p-1">
                 <i class="fa-solid fa-pen text-xs"></i>
@@ -3559,10 +3583,10 @@
                 <i class="fa-solid fa-trash-can text-xs"></i>
               </button>
             </div>
-          ` : ''}
-        `;
+          `;
+        }
         listEl.appendChild(row);
-      });
+      }); 
     }
 
     window.setStoreFilter = (id) => { currentStoreFilter = id; renderShoppingSection(); };
@@ -3602,7 +3626,6 @@
       document.getElementById('shopModalTitle').textContent = '+ 新增';
       document.getElementById('shopEditIdInput').value = '';
       document.getElementById('shopStoreInput').value = currentStoreFilter || 'daiso';
-      document.getElementById('shopPriorityInput').value = '必買';
       document.getElementById('shopNameInput').value = '';
       document.getElementById('shopSelfQtyInput').value = '1';
       document.getElementById('shopNoteInput').value = '';
@@ -3619,7 +3642,6 @@
       document.getElementById('shopModalTitle').textContent = '修改商品';
       document.getElementById('shopEditIdInput').value = item.id;
       document.getElementById('shopStoreInput').value = item.store || 'daiso';
-      document.getElementById('shopPriorityInput').value = item.priority || '必買';
       document.getElementById('shopNameInput').value = item.name || '';
       document.getElementById('shopSelfQtyInput').value = item.selfQty ?? 1;
       document.getElementById('shopNoteInput').value = item.note || '';
@@ -3658,47 +3680,55 @@
       if (document.getElementById('shopPhotoPreviewBox')) document.getElementById('shopPhotoPreviewBox').classList.add('hidden');
     };
 
-    window.saveNewShoppingItem = function(e) {
+    function getEffectiveItemPhoto(item) {
+      if (!item) return '';
+      if (item.photoDataUrl && item.photoDataUrl !== '__IN_SUBCOLLECTION__') return item.photoDataUrl;
+      return cloudShopPhotosMap[item.id] || '';
+    }
+
+    async function saveShopPhotoToSubcollection(itemId, dataUrl) {
+      if (!db || isCloudReadOnlyMode || !itemId) return;
+      const photoDocRef = doc(db, 'seoul_trip_2026', 'main_board', 'shop_photos', itemId);
+      try {
+        if (dataUrl && dataUrl !== '__IN_SUBCOLLECTION__') {
+          cloudShopPhotosMap[itemId] = dataUrl;
+          await setDoc(photoDocRef, { photoDataUrl: dataUrl, updatedAt: Date.now() });
+        } else if (!dataUrl) {
+          delete cloudShopPhotosMap[itemId];
+          await deleteDoc(photoDocRef);
+        }
+      } catch (e) {}
+    }
+
+    window.saveNewShoppingItem = async function(e) {
       e.preventDefault();
       if (!isTravelerMode()) return;
       const editId = document.getElementById('shopEditIdInput').value;
       const store = document.getElementById('shopStoreInput').value;
-      const priority = document.getElementById('shopPriorityInput').value;
       const name = document.getElementById('shopNameInput').value.trim();
       const selfQty = parseInt(document.getElementById('shopSelfQtyInput').value || '0', 10);
       const note = document.getElementById('shopNoteInput').value.trim();
       if (!name) return;
 
+      const finalPhoto = tempShopPhotoDataUrl || '';
+      const targetId = editId || ('shop-' + Date.now());
+
       if (editId) {
         const target = (tripState.shoppingItems || []).find(i => i.id === editId);
         if (target) {
-          Object.assign(target, {
-            store,
-            priority,
-            name,
-            note,
-            selfQty,
-            photoDataUrl: tempShopPhotoDataUrl || ''
-          });
+          Object.assign(target, { store, name, note, selfQty, photoDataUrl: finalPhoto });
         }
         showToast('已更新商品！');
       } else {
         tripState.shoppingItems.unshift({
-          id: 'shop-' + Date.now(),
-          store,
-          priority,
-          name,
-          note,
-          selfQty,
-          requests: {},
-          bought: false,
-          photoDataUrl: tempShopPhotoDataUrl || ''
+          id: targetId, store, name, note, selfQty, requests: {}, bought: false, photoDataUrl: finalPhoto
         });
         showToast('已加入購物清單！');
       }
 
       tempShopPhotoDataUrl = '';
       closeAddShoppingModal();
+      await saveShopPhotoToSubcollection(targetId, finalPhoto);
       syncStateEverywhere();
       renderAll();
     };
@@ -3711,7 +3741,17 @@
       showToast('已通知小吉郎與吉郎！');
     };
     window.toggleShoppingBought = (id) => { if (!isTravelerMode()) return; const item = tripState.shoppingItems.find(i => i.id === id); if (item) { item.bought = !item.bought; syncStateEverywhere(); renderAll(); } };
-    window.deleteShoppingItem = (id) => { if (!isTravelerMode()) return; tripState.shoppingItems = tripState.shoppingItems.filter(i => i.id !== id); syncStateEverywhere(); renderAll(); };
+    window.deleteShoppingItem = async (id) => {
+      if (!isTravelerMode()) return;
+      tripState.shoppingItems = tripState.shoppingItems.filter(i => i.id !== id);
+      delete cloudShopPhotosMap[id];
+      if (db && !isCloudReadOnlyMode) {
+        try { await deleteDoc(doc(db, 'seoul_trip_2026', 'main_board', 'shop_photos', id)); } catch (e) {}
+      }
+      syncStateEverywhere();
+      renderAll();
+    };
+    
     // Wishpool
     window.openAddWishModal = () => {
       if (isCloudReadOnlyMode) return;
@@ -3904,24 +3944,32 @@
           </div>
         `).join('');
       }
-
-      const lugItems = tripState.luggageItems || [];
+const lugItems = tripState.luggageItems || [];
       document.getElementById('luggageProgressText').textContent = `已打包 ${lugItems.filter(i => i.checked).length} / ${lugItems.length} 項`;
-      document.getElementById('luggageListContainer').innerHTML = lugItems.map(item => `
-        <div class="sketch-card bg-white border-snow-200 rounded-2xl p-3 flex items-start gap-2.5 ${item.checked ? 'opacity-60' : ''}">
-          <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleLuggageCheck('${item.id}')" class="mt-0.5 w-5 h-5 rounded-md accent-ice-600 cursor-pointer shrink-0" />
-          <div class="min-w-0 flex-1">
-            <p class="text-xs sm:text-sm font-bold text-ink-800 ${item.checked ? 'line-through text-ink-500' : ''}">${item.title}</p>
-            ${item.note ? `<p class="text-[11px] text-ink-500 mt-0.5">${item.note}</p>` : ''}
+      const lugContainer = document.getElementById('luggageListContainer');
+      lugContainer.className = 'grid grid-cols-2 gap-2.5 items-stretch';
+      lugContainer.innerHTML = lugItems.map(item => `
+        <div class="sketch-card bg-white border-snow-200 rounded-2xl p-2.5 flex flex-col justify-between gap-2 min-w-0 ${item.checked ? 'opacity-60' : ''}">
+          <div class="flex items-start gap-1.5 min-w-0">
+            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleLuggageCheck('${item.id}')" class="mt-0.5 w-4 h-4 rounded-md accent-ice-600 cursor-pointer shrink-0" />
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold text-ink-800 leading-snug break-words ${item.checked ? 'line-through text-ink-500' : ''}">${item.title}</p>
+              ${item.note ? `<p class="text-[11px] text-ink-500 mt-0.5 leading-snug break-words">${item.note}</p>` : ''}
+            </div>
           </div>
-          <div class="flex items-center gap-1 shrink-0">
+          <div class="flex items-center justify-end gap-1 pt-1 border-t border-snow-100">
             ${item.url ? `
               <a href="${item.url}" target="_blank" rel="noopener noreferrer"
-                 class="px-2 py-1 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 text-[10px] font-extrabold inline-flex items-center gap-0.5 transition">
-                <span>前往 ↗</span>
+                 class="px-2 py-0.5 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 text-[10px] font-extrabold">
+                前往 ↗
               </a>
             ` : ''}
-            <button onclick="deleteLuggageItem('${item.id}')" class="text-ice-500 hover:text-ice-700 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            <button type="button" onclick="openEditLuggageModal('${item.id}')" title="編輯" class="text-ink-500 hover:text-ice-700 p-1">
+              <i class="fa-solid fa-pen text-[11px]"></i>
+            </button>
+            <button type="button" onclick="deleteLuggageItem('${item.id}')" title="刪除" class="text-ice-500 hover:text-ice-700 p-1">
+              <i class="fa-solid fa-trash-can text-[11px]"></i>
+            </button>
           </div>
         </div>
       `).join('');
@@ -3990,14 +4038,27 @@
       document.getElementById('checkItemUrlInput').value = '';
       document.getElementById('addCheckItemModal').classList.remove('hidden');
     };
-
-    window.openAddLuggageModal = function() {
+window.openAddLuggageModal = function() {
       if (!isTravelerMode()) return;
       document.getElementById('addCheckItemType').value = 'luggage';
+      document.getElementById('editCheckItemId').value = '';
       document.getElementById('addCheckItemModalTitle').textContent = '新增行李打包項目';
       document.getElementById('checkItemTitleInput').value = '';
       document.getElementById('checkItemNoteInput').value = '';
       document.getElementById('checkItemUrlInput').value = '';
+      document.getElementById('addCheckItemModal').classList.remove('hidden');
+    };
+
+    window.openEditLuggageModal = function(itemId) {
+      if (!isTravelerMode()) return;
+      const target = (tripState.luggageItems || []).find(x => x.id === itemId);
+      if (!target) return;
+      document.getElementById('addCheckItemType').value = 'luggage';
+      document.getElementById('editCheckItemId').value = target.id;
+      document.getElementById('addCheckItemModalTitle').textContent = '編輯行李打包項目';
+      document.getElementById('checkItemTitleInput').value = target.title || '';
+      document.getElementById('checkItemNoteInput').value = target.note || '';
+      document.getElementById('checkItemUrlInput').value = target.url || '';
       document.getElementById('addCheckItemModal').classList.remove('hidden');
     };
 
@@ -4007,19 +4068,23 @@
       e.preventDefault();
       if (!isTravelerMode()) return;
       const type = document.getElementById('addCheckItemType').value;
+      const editId = document.getElementById('editCheckItemId').value;
       const title = document.getElementById('checkItemTitleInput').value.trim();
       const note = document.getElementById('checkItemNoteInput').value.trim();
       const url = document.getElementById('checkItemUrlInput').value.trim();
       if (!title) return;
       if (type === 'prep') {
         tripState.prepItems.unshift({ id: 'prep-' + Date.now(), title, note, url, checked: false });
+      } else if (editId) {
+        const target = (tripState.luggageItems || []).find(x => x.id === editId);
+        if (target) Object.assign(target, { title, note, url });
       } else {
         tripState.luggageItems.unshift({ id: 'lug-' + Date.now(), title, note, url, checked: false });
       }
       closeAddCheckItemModal();
       syncStateEverywhere();
       renderLuggageAndPrepSection();
-      showToast('已新增項目！');
+      showToast(editId ? '已更新項目！' : '已新增項目！');
     };
 
     // -------------------- NOTIFICATIONS & UTILS --------------------
