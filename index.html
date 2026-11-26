@@ -156,14 +156,21 @@
     <section id="section-itinerary" class="space-y-3">
       <nav id="dayTabs" class="grid grid-cols-7 gap-1 w-full"></nav>
 
-      <div class="flex items-center justify-between gap-2 px-0.5">
-        <h2 id="currentDayTitle" class="text-base font-extrabold text-ink-800">Day 1 仁川機場 > 首爾市區</h2>
+            <div class="flex items-center justify-between gap-2 px-0.5">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <h2 id="currentDayTitle" class="text-base font-extrabold text-ink-800 truncate">Day 1 仁川機場 > 首爾市區</h2>
+          <button type="button" onclick="editDayTitle()" title="修改當日大標題"
+                  class="traveler-only shrink-0 w-6 h-6 rounded-lg bg-snow-100 hover:bg-snow-200 border border-snow-300 text-ice-700 flex items-center justify-center active:scale-95 transition">
+            <i class="fa-solid fa-pen text-[10px]"></i>
+          </button>
+        </div>
         <button onclick="openAddItineraryModal()"
                 class="traveler-only shrink-0 inline-flex items-center gap-1.5 bg-ice-600 hover:bg-ice-700 text-white text-xs font-bold px-3 py-2 rounded-2xl shadow-2xs active:scale-95 transition">
           <i class="fa-solid fa-plus"></i>
           <span>新增行程</span>
         </button>
       </div>
+
 
       <!-- Day 1 Outbound Flight Card -->
       <div id="day1FlightCard" class="hidden sketch-card bg-white border-snow-300 rounded-2xl p-3 space-y-2.5">
@@ -2629,6 +2636,19 @@
         meta.wokeUp = false;
         syncStateEverywhere();
         renderAll();
+      }
+    };
+
+     window.editDayTitle = function() {
+      if (!isTravelerMode()) return;
+      const meta = tripState.daysMeta[currentDay];
+      if (!meta) return;
+      const nextTitle = prompt(`設定 ${meta.label} (${meta.date}) 的當日大標題：`, meta.title || '');
+      if (nextTitle !== null) {
+        meta.title = nextTitle.trim();
+        syncStateEverywhere();
+        renderAll();
+        showToast('已更新當日大標題！');
       }
     };
 
