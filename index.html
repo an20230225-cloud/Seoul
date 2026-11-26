@@ -1652,6 +1652,7 @@
         photosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'photos');
         shopPhotosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'shop_photos');
         cloudShopPhotosMap = {};
+        let hasMigratedLegacyShopPhotos = false;
 
         onSnapshot(shopPhotosColRef, (snap) => {
           const nextMap = {};
@@ -1673,6 +1674,15 @@
           if (snapshot.exists()) {
             const incoming = snapshot.data();
             tripState = { ...DEFAULT_TRIP_STATE, ...incoming };
+            if (!hasMigratedLegacyShopPhotos && !isCloudReadOnlyMode) {
+              hasMigratedLegacyShopPhotos = true;
+              const allShopAndWish = [...(tripState.shoppingItems || []), ...(tripState.wishpoolItems || [])];
+              allShopAndWish.forEach(entry => {
+                if (entry && entry.id && entry.photoDataUrl && entry.photoDataUrl !== '__IN_SUBCOLLECTION__') {
+                  saveShopPhotoToSubcollection(entry.id, entry.photoDataUrl);
+                }
+              });
+            }
             ensureSevenDaysMeta(tripState);
             if (!isValidPasscodeHash(tripState.travelerPasscodeHash)) {
               tripState.travelerPasscodeHash = DEFAULT_PASSCODE_HASH;
@@ -2816,9 +2826,51 @@
     // Add/Edit Itinerary
     window.moveSubItemRow = function(btn, direction) {
       const row = btn.closest('.sub-item-editor-row');
-      if (!row) return;
-      if (direction === -1 && row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling);
-      else if (direction === 1 && row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling, row);
+      const container = document.getElementById('subItemsEditorContainer');
+      if (!row || !container) return;
+      if (direction === -1 && row.previousElementSibling) {
+        container.insertBefore(row, row.previousElementSibling);
+      } else if (direction === 1 && row.nextElementSibling) {
+        container.insertBefore(row.nextElementSibling, row);
+      }
+    };
+
+    window.addSubItemInput = function(tagVal = '', nameVal = '', detailVal = '', queryVal = '', existingRefPhotos = [], existingIsPublic = false) {
+      const container = document.getElementById('subItemsEditorContainer');
+      const row = document.createElement('div');
+      row.className = 'sub-item-editor-row bg-white p-2.5 rounded-xl border border-snow-300 space-y-1.5';
+      row._refPhotos = Array.isArray(existingRefPhotos) ? [...existingRefPhotos] : [];
+      row.innerHTML = `
+        <div class="grid grid-cols-[72px_1fr_auto] gap-1 items-center">
+          <input type="text" placeholder="標籤" value="${tagVal}" class="sub-tag-input px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-[11px] font-bold text-ink-800" />
+          <input type="text" placeholder="小框框名稱 *" value="${nameVal}" class="sub-name-input px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-xs font-bold text-ink-800" />
+          <div class="flex items-center gap-0.5">
+            <button type="button" onclick="moveSubItemRow(this, -1)" title="上移" class="w-6 h-6 rounded-lg bg-snow-100 hover:bg-snow-200 text-ink-700 flex items-center justify-center"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+            <button type="button" onclick="moveSubItemRow(this, 1)" title="下移" class="w-6 h-6 rounded-lg bg-snow-100 hover:bg-snow-200 text-ink-700 flex items-center justify-center"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
+            <button type="button" onclick="this.closest('.sub-item-editor-row').remove()" title="移除" class="w-6 h-6 rounded-lg bg-snow-100 hover:bg-snow-200 text-ice-700 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-1.5">
+          <input type="text" placeholder="說明/地址" value="${detailVal}" class="sub-detail-input px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-[11px] text-ink-700" />
+          <input type="text" placeholder="Naver導航關鍵字" value="${queryVal}" class="sub-query-input px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-[11px] text-ink-700" />
+        </div>
+        <div class="pt-0.5 space-y-1.5">
+          <div class="flex items-center justify-between gap-1.5 flex-wrap">
+            <label class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-snow-50 hover:bg-snow-100 border border-snow-300 text-ice-700 text-[10px] font-extrabold cursor-pointer">
+              <i class="fa-solid fa-images"></i>
+              <span>+ 參考圖（可多選）</span>
+              <input type="file" accept="image/*" multiple onchange="handleSubRowRefPhotosSelect(this)" class="hidden" />
+            </label>
+            <select class="sub-ref-public-select px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-[10px] font-bold text-ink-800">
+              <option value="private" ${!existingIsPublic ? 'selected' : ''}>🔒 僅旅行者可見</option>
+              <option value="public" ${existingIsPublic ? 'selected' : ''}>🌐 公開</option>
+            </select>
+          </div>
+          <div class="sub-ref-preview-strip hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5"></div>
+        </div>
+      `;
+      container.appendChild(row);
+      renderSubRowRefPreview(row);
     };
 
     function renderSubRowRefPreview(row) {
@@ -3617,20 +3669,28 @@
       function updateBottomFamilyWishlistBar() {
       const bar = document.getElementById('familyWishlistBar');
       if (!bar) return;
-      if (activeMainTab === 'shopping' && isFamilyMode() && !isCloudReadOnlyMode && userIdentity.configured) {
-        const myName = userIdentity.nickname || '家人';
-        let totalQty = 0;
-        (tripState.shoppingItems || []).forEach(item => {
-          if (!item.bought && item.requests && item.requests[myName]) {
-            totalQty += item.requests[myName];
-          }
-        });
-        document.getElementById('barFamilyName').textContent = myName;
-        document.getElementById('barFamilyCountText').textContent = `目前已勾選 ${totalQty} 件`;
-        bar.classList.remove('hidden');
-      } else {
+      const shouldShow =
+        activeMainTab === 'shopping' &&
+        shoppingSubMode === 'official' &&
+        isFamilyMode() &&
+        !isCloudReadOnlyMode &&
+        Boolean(userIdentity.configured);
+
+      if (!shouldShow) {
         bar.classList.add('hidden');
+        return;
       }
+
+      const myName = userIdentity.nickname || '家人';
+      let totalQty = 0;
+      (tripState.shoppingItems || []).forEach(item => {
+        if (!item.bought && item.requests && item.requests[myName]) {
+          totalQty += item.requests[myName];
+        }
+      });
+      document.getElementById('barFamilyName').textContent = myName;
+      document.getElementById('barFamilyCountText').textContent = `目前已勾選 ${totalQty} 件`;
+      bar.classList.remove('hidden');
     }
     window.openAddShoppingModal = function() {
       if (!isTravelerMode()) return;
