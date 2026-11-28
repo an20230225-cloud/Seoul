@@ -1128,7 +1128,7 @@
 
     const STORES_META = [
       { id: 'daiso', label: '大創 Daiso', icon: '🏠' },
-      { id: '藥局/Olive Young', label: '藥局/Olive Young', icon: '💊' },
+      { id: 'oliveyoung', label: '藥局/Olive Young', icon: '💊' },
       { id: 'other', label: '其他/零食', icon: '🛍️' }
     ];
 
@@ -1428,6 +1428,8 @@
     let photosColRef = null;
     let shopPhotosColRef = null;
     let cloudShopPhotosMap = {};
+    let refPhotosColRef = null;
+      let cloudRefPhotosMap = {};
     let isCloudReadOnlyMode = false;
 
     let selectedTravelerName = '小吉郎';
@@ -1683,6 +1685,17 @@
           if (activeMainTab === 'shopping') {
             shoppingSubMode === 'official' ? renderShoppingSection() : renderWishpoolSection();
           }
+        });
+
+        refPhotosColRef = collection(db, 'seoul_trip_2026', 'main_board', 'itinerary_ref_photos');
+        onSnapshot(refPhotosColRef, (snap) => {
+          const nextMap = {};
+          snap.forEach(d => {
+            const val = d.data() || {};
+            if (val.dataUrl) nextMap[d.id] = val.dataUrl;
+          });
+          cloudRefPhotosMap = nextMap;
+          if (activeMainTab === 'itinerary') renderItineraryTimeline();
         });
 
         // 監聽主看板資料
@@ -2272,10 +2285,11 @@
         const iconSymbol = CATEGORY_ICONS[item.category] || '📍';
         const isLast = idx === dayItems.length - 1;
         const hasSubItems = Array.isArray(item.subItems) && item.subItems.length > 0;
-        const mainRefs = Array.isArray(item.refPhotos) && item.refPhotos.length > 0
-          ? item.refPhotos
-          : (item.notePhotoUrl ? [item.notePhotoUrl] : []);
-        const canViewMainRefs = mainRefs.length > 0 && (isTravelerMode() || Boolean(item.refPhotosPublic));
+       const rawMainRefs = Array.isArray(item.refPhotos) && item.refPhotos.length > 0
+             ? item.refPhotos
+             : (item.notePhotoUrl ? [item.notePhotoUrl] : []);
+            const mainRefs = rawMainRefs.map(resolveRefPhotoSrc).filter(Boolean);
+            const canViewMainRefs = mainRefs.length > 0 && (isTravelerMode() || Boolean(item.refPhotosPublic));
 
         if (idx > 0 && item.transit) {
           const transitRow = document.createElement('div');
@@ -2300,7 +2314,8 @@
               const subUrl = hasNav ? `https://map.naver.com/v5/search/${encodeURIComponent(sub.mapQuery)}` : '';
               const hasExtLink = sub.linkUrl && sub.linkUrl.trim().length > 0;
               const isSubDone = Boolean(sub.completed);
-              const subRefs = Array.isArray(sub.refPhotos) ? sub.refPhotos : [];
+              const rawSubRefs = Array.isArray(sub.refPhotos) ? sub.refPhotos : [];
+                      const subRefs = rawSubRefs.map(resolveRefPhotoSrc).filter(Boolean);
               const canViewSubRefs = subRefs.length > 0 && (isTravelerMode() || Boolean(sub.refPhotosPublic));
               const subDimClass = isSubDone ? 'bg-snow-100/75 border-snow-200 opacity-55' : 'bg-snow-50/95 border-snow-200';
 
@@ -2729,6 +2744,7 @@
         label = `${item.title} • 參考圖`;
         isPublic = Boolean(item.refPhotosPublic);
       }
+      photos = photos.map(resolveRefPhotoSrc).filter(Boolean);
       if (photos.length === 0) return;
 
       activeLightboxRefContext = { itemId, subIdx, label };
@@ -2947,44 +2963,6 @@
       renderSubRowRefPreview(row);
     };
 
-    window.addSubItemInput = function(tagVal = '', nameVal = '', detailVal = '', queryVal = '', existingRefPhotos = [], existingIsPublic = false) {
-      const container = document.getElementById('subItemsEditorContainer');
-      const row = document.createElement('div');
-      row.className = 'sub-item-editor-row bg-white p-2.5 rounded-xl border border-snow-300 space-y-1.5';
-      row._refPhotos = Array.isArray(existingRefPhotos) ? [...existingRefPhotos] : [];
-      row.innerHTML = `
-        <div class="grid grid-cols-[72px_1fr_auto] gap-1 items-center">
-          <input type="text" placeholder="標籤" value="${tagVal}" class="sub-tag-input px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-[11px] font-bold text-ink-800" />
-          <input type="text" placeholder="小框框名稱 *" value="${nameVal}" class="sub-name-input px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-xs font-bold text-ink-800" />
-          <div class="flex items-center gap-0.5">
-            <button type="button" onclick="moveSubItemRow(this, -1)" class="w-6 h-6 rounded-lg bg-snow-100 text-ink-700 flex items-center justify-center"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
-            <button type="button" onclick="moveSubItemRow(this, 1)" class="w-6 h-6 rounded-lg bg-snow-100 text-ink-700 flex items-center justify-center"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
-            <button type="button" onclick="this.closest('.sub-item-editor-row').remove()" class="w-6 h-6 rounded-lg bg-snow-100 text-ice-700 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-1.5">
-          <input type="text" placeholder="說明/地址" value="${detailVal}" class="sub-detail-input px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-[11px] text-ink-700" />
-          <input type="text" placeholder="Naver導航關鍵字" value="${queryVal}" class="sub-query-input px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-[11px] text-ink-700" />
-        </div>
-        <div class="pt-0.5 space-y-1.5">
-          <div class="flex items-center justify-between gap-1.5 flex-wrap">
-            <label class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-snow-50 hover:bg-snow-100 border border-snow-300 text-ice-700 text-[10px] font-extrabold cursor-pointer">
-              <i class="fa-solid fa-images"></i>
-              <span>+ 參考圖（可多選）</span>
-              <input type="file" accept="image/*" multiple onchange="handleSubRowRefPhotosSelect(this)" class="hidden" />
-            </label>
-            <select class="sub-ref-public-select px-2 py-1 rounded-lg border border-snow-300 bg-snow-50 text-[10px] font-bold text-ink-800">
-              <option value="private" ${!existingIsPublic ? 'selected' : ''}>🔒 僅旅行者可見</option>
-              <option value="public" ${existingIsPublic ? 'selected' : ''}>🌐 公開</option>
-            </select>
-          </div>
-          <div class="sub-ref-preview-strip hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5"></div>
-        </div>
-      `;
-      container.appendChild(row);
-      renderSubRowRefPreview(row);
-    };
-
     function renderMainRefPhotosPreview() {
       const strip = document.getElementById('mainRefPhotosPreviewStrip');
       if (!strip) return;
@@ -3060,20 +3038,53 @@
       document.getElementById('editTransitInput').value = item.transit || '';
       document.getElementById('editNotesInput').value = item.notes || '';
       document.getElementById('mainRefVisibilitySelect').value = item.refPhotosPublic ? 'public' : 'private';
-      tempMainRefPhotos = Array.isArray(item.refPhotos) && item.refPhotos.length > 0
-        ? [...item.refPhotos]
-        : (item.notePhotoUrl ? [item.notePhotoUrl] : []);
-      renderMainRefPhotosPreview();
-      const subContainer = document.getElementById('subItemsEditorContainer');
-      subContainer.innerHTML = '';
-      (item.subItems || []).forEach(sub => addSubItemInput(sub.tag, sub.name, sub.detail, sub.mapQuery, sub.refPhotos || [], Boolean(sub.refPhotosPublic)));
+      const rawEditMainRefs = Array.isArray(item.refPhotos) && item.refPhotos.length > 0
+         ? item.refPhotos
+         : (item.notePhotoUrl ? [item.notePhotoUrl] : []);
+       tempMainRefPhotos = rawEditMainRefs.map(resolveRefPhotoSrc).filter(Boolean);
+       renderMainRefPhotosPreview();
+       const subContainer = document.getElementById('subItemsEditorContainer');
+       subContainer.innerHTML = '';
+       (item.subItems || []).forEach(sub => {
+        const resolvedSubRefs = (sub.refPhotos || []).map(resolveRefPhotoSrc).filter(Boolean);
+        addSubItemInput(sub.tag, sub.name, sub.detail, sub.mapQuery, resolvedSubRefs, Boolean(sub.refPhotosPublic));
+      });
       renderLinkedStoreChecklist(item.linkedStores || []);
       document.getElementById('editItineraryModal').classList.remove('hidden');
     };
 
     window.closeEditItineraryModal = () => document.getElementById('editItineraryModal').classList.add('hidden');
 
-    window.saveItineraryItem = function(event) {
+function resolveRefPhotoSrc(val) {
+      if (!val) return '';
+      if (val.startsWith('data:image')) return val;
+      return cloudRefPhotosMap[val] || '';
+    }
+
+    async function uploadRefPhotosArrayToCloud(arr) {
+      if (!Array.isArray(arr) || arr.length === 0) return [];
+      const resultIds = [];
+      for (const item of arr) {
+        if (!item) continue;
+        if (!item.startsWith('data:image')) {
+          resultIds.push(item);
+          continue;
+        }
+        const photoId = 'ref-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        cloudRefPhotosMap[photoId] = item;
+        if (db && !isCloudReadOnlyMode) {
+          try {
+            await setDoc(doc(db, 'seoul_trip_2026', 'main_board', 'itinerary_ref_photos', photoId), {
+              dataUrl: item,
+              createdAt: Date.now()
+            });
+          } catch (e) {}
+        }
+        resultIds.push(photoId);
+      }
+      return resultIds;
+    }
+    window.saveItineraryItem = async function(event) {
       event.preventDefault();
       if (!isTravelerMode()) return;
       const id = document.getElementById('editItemId').value;
@@ -3086,17 +3097,19 @@
       if (!title) return;
 
       const subItems = [];
-      document.querySelectorAll('.sub-item-editor-row').forEach(row => {
+      const subRows = Array.from(document.querySelectorAll('.sub-item-editor-row'));
+      for (const row of subRows) {
         const sTag = row.querySelector('.sub-tag-input').value.trim();
         const sName = row.querySelector('.sub-name-input').value.trim();
         const sDetail = row.querySelector('.sub-detail-input').value.trim();
         const sQuery = row.querySelector('.sub-query-input').value.trim();
-        const sRefs = Array.isArray(row._refPhotos) ? [...row._refPhotos] : [];
+        const sRefs = await uploadRefPhotosArrayToCloud(row._refPhotos || []);
         const sPublic = row.querySelector('.sub-ref-public-select')?.value === 'public';
         if (sName) subItems.push({ tag: sTag, name: sName, detail: sDetail, mapQuery: sQuery, refPhotos: sRefs, refPhotosPublic: sPublic });
-      });
+      }
 
       const linkedStores = Array.from(document.querySelectorAll('.linked-store-cb:checked')).map(cb => cb.value);
+      const uploadedMainRefs = await uploadRefPhotosArrayToCloud(tempMainRefPhotos);
 
       if (id) {
         const item = tripState.items.find(i => i.id === id);
@@ -3108,7 +3121,7 @@
             transit,
             mapQuery: title,
             notes,
-            refPhotos: [...tempMainRefPhotos],
+            refPhotos: uploadedMainRefs,
             refPhotosPublic,
             notePhotoUrl: '',
             subItems,
@@ -3118,7 +3131,7 @@
       } else {
         tripState.items.push({
           id: 'custom-' + Date.now(), day: currentDay, time, category, title, transit,
-          mapQuery: title, notes, refPhotos: [...tempMainRefPhotos], refPhotosPublic, notePhotoUrl: '', subItems, linkedStores, adjusted: false
+          mapQuery: title, notes, refPhotos: uploadedMainRefs, refPhotosPublic, notePhotoUrl: '', subItems, linkedStores, adjusted: false
         });
       }
       closeEditItineraryModal();
@@ -3431,17 +3444,24 @@
         const { itemId, subIdx, label } = activeLightboxRefContext;
         const item = tripState.items.find(i => i.id === itemId);
         if (item) {
+          let removedPhotoId = '';
           if (subIdx >= 0 && Array.isArray(item.subItems) && item.subItems[subIdx]) {
             const arr = item.subItems[subIdx].refPhotos || [];
-            arr.splice(activeAlbumIndex, 1);
+            removedPhotoId = arr.splice(activeAlbumIndex, 1)[0];
             item.subItems[subIdx].refPhotos = arr;
           } else {
             const arr = Array.isArray(item.refPhotos) && item.refPhotos.length > 0
               ? item.refPhotos
               : (item.notePhotoUrl ? [item.notePhotoUrl] : []);
-            arr.splice(activeAlbumIndex, 1);
+            removedPhotoId = arr.splice(activeAlbumIndex, 1)[0];
             item.refPhotos = arr;
             item.notePhotoUrl = '';
+          }
+          if (removedPhotoId && !removedPhotoId.startsWith('data:image')) {
+            delete cloudRefPhotosMap[removedPhotoId];
+            if (db && !isCloudReadOnlyMode) {
+              deleteDoc(doc(db, 'seoul_trip_2026', 'main_board', 'itinerary_ref_photos', removedPhotoId)).catch(() => {});
+            }
           }
         }
         activeAlbumPhotos.splice(activeAlbumIndex, 1);
@@ -3985,6 +4005,9 @@ let activeDragShopId = null;
       tripState.wishpoolItems.unshift({ id: 'wish-' + Date.now(), author, stores, name, qty, note, photoDataUrl: tempWishPhotoDataUrl, status: 'searching', linkedShopId });
       pushTargetedNotification('wishpool_new', 'traveler', `🌠 ${author} 新增許願：「${name}」x${qty}`, '已自動加入購物清單', 'shopping');
       closeAddWishModal();
+if (tempWishPhotoDataUrl) {
+        saveShopPhotoToSubcollection(linkedShopId, tempWishPhotoDataUrl);
+      }
       syncStateEverywhere();
       renderAll();
       showToast('已送出許願！');
